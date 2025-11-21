@@ -108,11 +108,11 @@ go get github.com/mysteryon88/gnark-to-snarkjs@latest
 go run main.go
 
 # export Tact contract
-npx export-ton-verifier "./circuits/Cubic (gnark)/verification_key.json" ./contracts/verifier_cubic.tact --tact
+npx export-ton-verifier ./circuits/cubic-gnark/verification_key.json ./contracts/verifier_cubic.tact --tact
 # export FunC contract
-npx export-ton-verifier "./circuits/Cubic (gnark)/verification_key.json" ./contracts/verifier_cubic.fc
+npx export-ton-verifier ./circuits/cubic-gnark/verification_key.json ./contracts/verifier_cubic.fc
 # export Tolk contract
-npx export-ton-verifier "./circuits/Cubic (gnark)/verification_key.json" ./contracts/verifier_cubic.tolk --tolk
+npx export-ton-verifier ./circuits/cubic-gnark/verification_key.json ./contracts/verifier_cubic.tolk --tolk
 
 # testing contracts
 npx blueorint build
