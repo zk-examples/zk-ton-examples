@@ -1,0 +1,10 @@
+{
+  "gas": {
+    "Deploy": 536,
+    "Verify": 88768
+  },
+  "codeSize": {
+    "Verifier_cubic_tolk bits": 4353,
+    "Verifier_cubic_tolk cells": 11
+  }
+}

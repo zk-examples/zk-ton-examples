@@ -39,10 +39,10 @@ cd ../..
 
 # export FunC contract
 npx export-ton-verifier ./circuits/Multiplier/Multiplier_final.zkey ./contracts/verifier_multiplier.fc
-# export Tolk contract
-npx export-ton-verifier ./circuits/Multiplier/Multiplier_final.zkey ./contracts/verifier_multiplier.tolk --tolk
 # export Tact contract
 npx export-ton-verifier ./circuits/Multiplier/Multiplier_final.zkey ./contracts/verifier_multiplier.tact --tact
+# export Tolk contract
+npx export-ton-verifier ./circuits/Multiplier/Multiplier_final.zkey ./contracts/verifier_multiplier.tolk --tolk
 
 # Only copy the TypeScript wrapper
 npx export-ton-verifier import-wrapper ./wrappers/Verifier.ts --force
@@ -72,10 +72,10 @@ snarkjs groth16 verify verification_key.json public.json proof.json
 
 # export FunC contract
 npx export-ton-verifier ./circuits/Sudoku/Sudoku_final.zkey ./contracts/verifier_sudoku.fc
-# export Tolk contract
-npx export-ton-verifier ./circuits/Sudoku/Sudoku_final.zkey ./contracts/verifier_sudoku.tolk --tolk
 # export Tact contract
 npx export-ton-verifier ./circuits/Sudoku/Sudoku_final.zkey ./contracts/verifier_sudoku.tact --tact
+# export Tolk contract
+npx export-ton-verifier ./circuits/Sudoku/Sudoku_final.zkey ./contracts/verifier_sudoku.tolk --tolk
 ```
 
 ### Gnark and Arkworks
@@ -107,10 +107,10 @@ go get github.com/mysteryon88/gnark-to-snarkjs@latest
 # compilation, export
 go run main.go
 
-# export Tact contract
-npx export-ton-verifier ./circuits/cubic-gnark/verification_key.json ./contracts/verifier_cubic.tact --tact
 # export FunC contract
 npx export-ton-verifier ./circuits/cubic-gnark/verification_key.json ./contracts/verifier_cubic.fc
+# export Tact contract
+npx export-ton-verifier ./circuits/cubic-gnark/verification_key.json ./contracts/verifier_cubic.tact --tact
 # export Tolk contract
 npx export-ton-verifier ./circuits/cubic-gnark/verification_key.json ./contracts/verifier_cubic.tolk --tolk
 

@@ -9,8 +9,8 @@ import { Verifier } from '../build/Verifier_cubic_tact/Verifier_cubic_tact_Verif
 
 import { dictFromInputList, groth16CompressProof } from 'export-ton-verifier';
 
-const verificationKey = require('../circuits/Cubic (gnark)/verification_key.json');
-const proofFile = require('../circuits/Cubic (gnark)/proof.json');
+const verificationKey = require('../circuits/cubic-gnark/verification_key.json');
+const proofFile = require('../circuits/cubic-gnark/proof.json');
 
 // npx blueprint test Verifier_cubic_tact
 describe('Verifier_cubic_tact', () => {
@@ -34,8 +34,9 @@ describe('Verifier_cubic_tact', () => {
             {
                 value: toNano('0.05'),
             },
-            { $$type: 'Deploy', queryId: 0n },
+            null,
         );
+
 
         expect(deployResult.transactions).toHaveTransaction({
             from: deployer.address,

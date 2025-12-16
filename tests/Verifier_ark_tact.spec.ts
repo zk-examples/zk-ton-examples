@@ -34,7 +34,7 @@ describe('Verifier_ark_tact', () => {
             {
                 value: toNano('0.05'),
             },
-            { $$type: 'Deploy', queryId: 0n },
+            null,
         );
 
         expect(deployResult.transactions).toHaveTransaction({

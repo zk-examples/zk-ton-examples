@@ -1,5 +1,3 @@
-import "@stdlib/deploy";
-
 // ASM intrinsics
 asm fun blsG1Add(x: Slice, y: Slice): Slice { BLS_G1_ADD }
 asm fun blsG1Neg(x: Slice): Slice { BLS_G1_NEG }
@@ -29,10 +27,6 @@ asm fun blsG1Multiexp_4(
   x4: Slice, y4: Int
   , n: Int
 ): Slice { BLS_G1_MULTIEXP }
-
-// Sizes
-const P1_SIZE: Int = 48 * 8;
-const P2_SIZE: Int = 96 * 8;
 
 // Verification key constants
 const vk_gamma_2: Slice = rawSlice("93e02b6052719f607dacd3a088274f65596bd0d09920b61ab5da61bbdc7f5049334cf11213945d57e5ac7d055d042b7e024aa2b2f08f0a91260805272dc51051c6e47ad4fa403b02b4510b647ae3d1770bac0326a805bbefd48056c8c121bdb8");
@@ -217,20 +211,31 @@ fun ic(idx: Int): Slice {
   // nativeThrow(ERR_INDEX_OUT_OF_RANGE);
 }
 
+// Safe getter for public inputs: throws ERR_PUBLIC_NOT_PRESENT
+fun getPub(pubInputs: map<Int as uint32, Int>, k: Int): Int {
+  let v = pubInputs.get(k);
+  if (v == null) {
+    nativeThrow(ERR_PUBLIC_NOT_PRESENT);
+  }
+  return v!!;
+}
+
 // Message definition
-message Verify {
+message (0x3b3cca17) Verify {
   piA: Slice;
   piB: Slice;
   piC: Slice;
   pubInputs: map<Int as uint32, Int>;
 }
 
-contract Verifier with Deployable {
+contract Verifier {
 
   receive(msg: Verify) {
     let res = self.groth16Verify(msg.piA, msg.piB, msg.piC, msg.pubInputs);
     nativeThrowUnless(ERR_WRONG_PROOF, res);
   }
+
+  receive() {}
 
   fun groth16Verify(
     piA: Slice,
@@ -238,45 +243,63 @@ contract Verifier with Deployable {
     piC: Slice,
     pubInputs: map<Int as uint32, Int>
   ): Bool {
+
+    // --- acc = Σ(v_i * IC_{i+1}) (ONLY public-dependent part) ---
+    let haveAcc: Bool = false;
+    let acc: Slice = IC0; // placeholder until haveAcc=true
+
     // Loop over full batches of 7
     let done: Int = 0;
     let batchesLeft: Int = 11;
-    let cpub: Slice = IC0; // Start with neutral value and sum the batch results
+
     while (batchesLeft > 0) {
       let tmp: Slice = blsG1Multiexp_7(
-        ic(done + 1), pubInputs.get(done + 0)!!,
-        ic(done + 2), pubInputs.get(done + 1)!!,
-        ic(done + 3), pubInputs.get(done + 2)!!,
-        ic(done + 4), pubInputs.get(done + 3)!!,
-        ic(done + 5), pubInputs.get(done + 4)!!,
-        ic(done + 6), pubInputs.get(done + 5)!!,
-        ic(done + 7), pubInputs.get(done + 6)!!,
+        ic(done + 1), getPub(pubInputs, done + 0),
+        ic(done + 2), getPub(pubInputs, done + 1),
+        ic(done + 3), getPub(pubInputs, done + 2),
+        ic(done + 4), getPub(pubInputs, done + 3),
+        ic(done + 5), getPub(pubInputs, done + 4),
+        ic(done + 6), getPub(pubInputs, done + 5),
+        ic(done + 7), getPub(pubInputs, done + 6),
         7
       );
-      // If this is the first batch — replace IC0 with tmp, otherwise sum up
-      cpub = (done == 0) ? tmp : blsG1Add(cpub, tmp);
+
+      if (!haveAcc) {
+        acc = tmp;
+        haveAcc = true;
+      } else {
+        acc = blsG1Add(acc, tmp);
+      }
+
       done += 7;
       batchesLeft -= 1;
     }
 
-    // Tail batch for the remaining 4 elements
+    // Tail batch for remaining 4
     let tail: Slice = blsG1Multiexp_4(
-      ic(done + 1), pubInputs.get(done + 0)!!,
-      ic(done + 2), pubInputs.get(done + 1)!!,
-      ic(done + 3), pubInputs.get(done + 2)!!,
-      ic(done + 4), pubInputs.get(done + 3)!!
+      ic(done + 1), getPub(pubInputs, done + 0),
+      ic(done + 2), getPub(pubInputs, done + 1),
+      ic(done + 3), getPub(pubInputs, done + 2),
+      ic(done + 4), getPub(pubInputs, done + 3)
       , 4
     );
-    cpub = blsG1Add(cpub, tail);
+
+    if (!haveAcc) {
+      acc = tail;
+      haveAcc = true;
+    } else {
+      acc = blsG1Add(acc, tail);
+    }
+
     done += 4;
 
-    // Add the constant term
-    cpub = blsG1Add(cpub, IC0);
-
-    // Check that no extra public inputs exist
+    // Cheap guard: reject obvious extras
     nativeThrowIf(ERR_TOO_MANY_PUBLICS, pubInputs.exists(81));
 
-    // Perform pairing check
+    // --- cpub = IC0 + acc (IC0 is added exactly once) ---
+    let cpub: Slice = haveAcc ? blsG1Add(acc, IC0) : IC0;
+
+    // Pairing check
     let piANeg: Slice = blsG1Neg(piA);
     let ok: Int = blsPairing(
       cpub,       vk_gamma_2,
@@ -285,6 +308,7 @@ contract Verifier with Deployable {
       vk_alpha_1, vk_beta_2,
       4
     );
+
     return ok != 0;
   }
 

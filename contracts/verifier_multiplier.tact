@@ -1,5 +1,3 @@
-import "@stdlib/deploy";
-
 // ASM intrinsics
 asm fun blsG1Add(x: Slice, y: Slice): Slice { BLS_G1_ADD }
 asm fun blsG1Neg(x: Slice): Slice { BLS_G1_NEG }
@@ -16,10 +14,6 @@ asm fun blsG1Multiexp_1(
   x1: Slice, y1: Int
   , n: Int
 ): Slice { BLS_G1_MULTIEXP }
-
-// Sizes
-const P1_SIZE: Int = 48 * 8;
-const P2_SIZE: Int = 96 * 8;
 
 // Verification key constants
 const vk_gamma_2: Slice = rawSlice("93e02b6052719f607dacd3a088274f65596bd0d09920b61ab5da61bbdc7f5049334cf11213945d57e5ac7d055d042b7e024aa2b2f08f0a91260805272dc51051c6e47ad4fa403b02b4510b647ae3d1770bac0326a805bbefd48056c8c121bdb8");
@@ -38,20 +32,31 @@ const ERR_INDEX_OUT_OF_RANGE: Int = 259;
 const ERR_WRONG_PROOF: Int = 260;
 
 
+// Safe getter for public inputs: throws ERR_PUBLIC_NOT_PRESENT
+fun getPub(pubInputs: map<Int as uint32, Int>, k: Int): Int {
+  let v = pubInputs.get(k);
+  if (v == null) {
+    nativeThrow(ERR_PUBLIC_NOT_PRESENT);
+  }
+  return v!!;
+}
+
 // Message definition
-message Verify {
+message (0x3b3cca17) Verify {
   piA: Slice;
   piB: Slice;
   piC: Slice;
   pubInputs: map<Int as uint32, Int>;
 }
 
-contract Verifier with Deployable {
+contract Verifier {
 
   receive(msg: Verify) {
     let res = self.groth16Verify(msg.piA, msg.piB, msg.piC, msg.pubInputs);
     nativeThrowUnless(ERR_WRONG_PROOF, res);
   }
+
+  receive() {}
 
   fun groth16Verify(
     piA: Slice,
@@ -59,19 +64,26 @@ contract Verifier with Deployable {
     piC: Slice,
     pubInputs: map<Int as uint32, Int>
   ): Bool {
+
+    // --- acc = Σ(v_i * IC_{i+1}) (ONLY public-dependent part) ---
+    let haveAcc: Bool = false;
+    let acc: Slice = IC0; // placeholder until haveAcc=true
+
     // Single batch (no loop and no ic())
-    let cpub: Slice = blsG1Multiexp_1(
-      IC1, pubInputs.get(0)!!
+    acc = blsG1Multiexp_1(
+      IC1, getPub(pubInputs, 0)
       , 1
     );
+    haveAcc = true;
 
-    // Add the constant term
-    cpub = blsG1Add(cpub, IC0);
-
-    // Check that no extra public inputs exist
+    // Cheap guard: reject obvious extras
     nativeThrowIf(ERR_TOO_MANY_PUBLICS, pubInputs.exists(1));
 
-    // Perform pairing check
+
+    // --- cpub = IC0 + acc (IC0 is added exactly once) ---
+    let cpub: Slice = haveAcc ? blsG1Add(acc, IC0) : IC0;
+
+    // Pairing check
     let piANeg: Slice = blsG1Neg(piA);
     let ok: Int = blsPairing(
       cpub,       vk_gamma_2,
@@ -80,6 +92,7 @@ contract Verifier with Deployable {
       vk_alpha_1, vk_beta_2,
       4
     );
+
     return ok != 0;
   }
 

@@ -1,0 +1,10 @@
+{
+  "gas": {
+    "Deploy": 515,
+    "Verify": 89546
+  },
+  "codeSize": {
+    "Verifier_ark_func bits": 4535,
+    "Verifier_ark_func cells": 13
+  }
+}

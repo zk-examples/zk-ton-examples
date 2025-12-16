@@ -3,19 +3,15 @@
 ;; ops
 const op::verify = "op::verify"c;
 
-;; sizes
-const int verifier::P1_SIZE = 48 * 8;
-const int verifier::P2_SIZE = 96 * 8;
-
 ;; input constants (IC0 is the base term)
-const slice verifier::IC0 = "ac679fca56dd1954945e5d72e97f8c35232596926d6a60541173d0e46c0f8449b8e5430eaa2219ad42652ce1a0451be4"s;
-const slice verifier::IC1 = "8151fd5b7c8e9051a5a8d82f513fb3478fde4ec5b852c31019a44f07883b8f3d00987561848b9adf062e34e1e7add6f2"s;
+const slice verifier::IC0 = "8f7ec83e8c262030b5e3bf0635d08328ec1fd98025e72e36d78e47c03ab29186b7f0bb319795ae70531987752be074aa"s;
+const slice verifier::IC1 = "8a83399e89cdfe9deb00acc467c2c3e7a07383d68def6bf5c3146795b0df11c8c6bf56585a068a1a50d3bd287549c5da"s;
 
 ;; vk constants
-const slice verifier::vk_gamma_2 = "883db90348422eefcf5b4533663c58fa4d22bb3c33bc02e098ce629b2a818bdb07efe831f3940d0d138eb775d1f30b731273d54d06405b4c2286ee7cd1e4cd6e2285b4351bf5fcfe534032b169244e23d86866e40e16034b84cc3ae82c667119"s;
-const slice verifier::vk_delta_2 = "a27ade5cb53cd3062111148f87993c32479424a1ddfb7ef64c111bda40db93a3196f9d41a0c6b093a0c5c19c34f2101b17f9f08eceaa8805d91ef6f7b2202ea671d039810f7f92f22e0ea7a15958eec9a51def97c8e9e54fc4637a8e0afe3f7f"s;
-const slice verifier::vk_alpha_1 = "8730d8bce3fc01a778b45cc987da79fe6dc5769b011ab3198a3bc9e59ad44056559122ef5b1d5fec3a80bfe64682ffdd"s;
-const slice verifier::vk_beta_2  = "b9a837cedb35b8f789d2869f46ef16c74d5671710a86d62c6d686f560054fbc2b1417089bf5018457cd031b0db8b55bf0a09b13b270c4321eff2c202f787e8a4d0311a6a107fb017b1ace4ebd8744d4e1f1a7050e34660b77b907b54c0c95421"s;
+const slice verifier::vk_gamma_2 = "b2935b21a3430da5ea17f4028e3443a78ec188b6f43e11aeac4521ffdbdb5124d5c7dae9bf40314b0651bfa1bd2b08ce07a0efdd5a1b3570db9e31d5f580c89a4c92f3f46a232f33b88d7ba953c1997ea45e49ea8dab9d10770f3641dde38cf0"s;
+const slice verifier::vk_delta_2 = "86208cafc8b4c214b2d728ca55a8f3a559d996d1bbf5acf9f42e650a8e21a5dda8095ccea6e796d5031058fbbf52b851170f57bcafd1461f9e1878907e73d779739b81a29b4028943d617f08297609e9b5e7909ccd1bf370a0fe2ede372fcdb2"s;
+const slice verifier::vk_alpha_1 = "a865654d7629401a80edac497c4ecaaefc1226c536afac2435d98848c22e94afdbcb8a53e68f011eb2d5a17b4c75b213"s;
+const slice verifier::vk_beta_2  = "8bad7d089acdcccef70c4bcd1c837305179decca03c659afe3cd61c1a9a9d74e4427fc163dcd653648051c532a1a28f013589f9fee32a37d0b9cf4a1d3c14fa4880731e96f19f255d8ee7466de0995efbf412ed536cb0975554d6ef77e052123"s;
 
 ;; public input dict settings
 const int verifier::publicInputKeyLen = 32;
@@ -38,26 +34,10 @@ slice bls_g1_multiexp_1(
     , int n
 ) asm "BLS_G1_MULTIEXP";
 
-(slice, slice) load_p1(slice body) impure {
-    cell c = body~load_ref();
-    slice s = c.begin_parse();
-    slice p1 = first_bits(s, verifier::P1_SIZE);
-    s~skip_bits(verifier::P1_SIZE);
-    return (s, p1);
-}
-
-(slice, slice) load_p2(slice body) impure {
-    cell c = body~load_ref();
-    slice s = c.begin_parse();
-    slice p2 = first_bits(s, verifier::P2_SIZE);
-    s~skip_bits(verifier::P2_SIZE);
-    return (s, p2);
-}
-
 (int) groth16Verify(
-    slice pi_a,
-    slice pi_b,
-    slice pi_c,
+    slice piA,
+    slice piB,
+    slice piC,
     cell pubInputs
 ) impure {
     int res = 0;
@@ -68,7 +48,7 @@ slice bls_g1_multiexp_1(
     throw_unless(verifier::err::public_not_present, ok0);
     int val0 = input0~load_uint(256);
 
-    ;; ensure the dict is now empty
+    ;; ensure the dict is now empty (no extra public inputs beyond 0..nPublic-1)
     throw_unless(verifier::err::too_many_publics, null?(pubInputs));
 
     ;; assemble cpub via batched MULTIEXP and summation
@@ -81,11 +61,11 @@ slice bls_g1_multiexp_1(
     cpub = bls_g1_add(cpub, verifier::IC0);
 
     ;; pairing check
-    slice pi_a_neg = bls_g1_neg(pi_a);
+    slice piA_neg = bls_g1_neg(piA);
     int a = bls_pairing(
         cpub,              verifier::vk_gamma_2,
-        pi_a_neg,          pi_b,
-        pi_c,              verifier::vk_delta_2,
+        piA_neg,          piB,
+        piC,              verifier::vk_delta_2,
         verifier::vk_alpha_1, verifier::vk_beta_2,
         4
     );
@@ -98,18 +78,18 @@ slice bls_g1_multiexp_1(
     return (res);
 }
 
-(int) verify(
+(int) verifyProof(
     slice in_msg_body
 ) impure {
-    slice pi_a = in_msg_body~load_p1();
-    slice pi_b = in_msg_body~load_p2();
-    slice pi_c = in_msg_body~load_p1();
+    slice piA = in_msg_body~load_ref().begin_parse();
+    slice piB = in_msg_body~load_ref().begin_parse();
+    slice piC = in_msg_body~load_ref().begin_parse();
     var pubInputs = in_msg_body~load_dict();
 
     return groth16Verify(
-        pi_a,
-        pi_b,
-        pi_c,
+        piA,
+        piB,
+        piC,
         pubInputs
     );
 }
@@ -124,26 +104,15 @@ slice bls_g1_multiexp_1(
         return ();
     }
     int op = in_msg_body~load_uint(32);
-    int query_id = in_msg_body~load_uint(64);
 
     if (op == op::verify) {
-        int res = verify(in_msg_body);
+        int res = verifyProof(in_msg_body);
         throw_unless(verifier::err::wrong_proof, res == 1);
         return ();
     }
     throw(0xffff);
 }
 
-int get_verify(
-    slice pi_a,
-    slice pi_b,
-    slice pi_c,
-    slice pubInputs
-) method_id {
-    return groth16Verify(
-        pi_a,
-        pi_b,
-        pi_c,
-        pubInputs~load_dict()
-    );
+int verify(slice piA, slice piB, slice piC, slice pubInputs) method_id {
+  return groth16Verify(piA, piB, piC, pubInputs~load_dict());
 }
