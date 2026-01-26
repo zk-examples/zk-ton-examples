@@ -7,6 +7,8 @@ Gas cost tests have been performed, and the results are located in the `bench-sn
 
 Example usage of verifiers in a TON project can be found at: [zk-examples/zkJetton (Tact)](https://github.com/zk-examples/zkJetton)
 
+For more details, see the [TON documentation on zk-proofs](https://docs.ton.org/contract-dev/zero-knowledge).
+
 ## How to create
 
 ```sh
