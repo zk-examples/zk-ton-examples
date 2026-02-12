@@ -2,10 +2,13 @@
 
 This repository is currently under development and testing.
 It demonstrates how to integrate zero-knowledge proofs from **Circom**, **Noname**, **Gnark** or **Arkworks** into the TON blockchain using smart contracts written in **FunC**, **Tolk** and **Tact**.
+The current implementation uses the **Groth16** proving system for on-chain verification.
 
 Gas cost tests have been performed, and the results are located in the `bench-snapshots` directory.
 
 Example usage of verifiers in a TON project can be found at: [zk-examples/zkJetton (Tact)](https://github.com/zk-examples/zkJetton)
+
+An experimental repository exploring PLONK-based verification on TON is also available: [zk-examples/zk-ton-plonk](https://github.com/zk-examples/zk-ton-plonk)
 
 For more details, see the [TON documentation on zk-proofs](https://docs.ton.org/contract-dev/zero-knowledge).
 
@@ -47,7 +50,7 @@ npx export-ton-verifier ./circuits/Multiplier/Multiplier_final.zkey ./contracts/
 npx export-ton-verifier ./circuits/Multiplier/Multiplier_final.zkey ./contracts/verifier_multiplier.tolk --tolk
 
 # Only copy the TypeScript wrapper
-npx export-ton-verifier import-wrapper ./wrappers/Verifier.ts --force
+npx export-ton-verifier import-wrapper ./wrappers/Verifier1.ts --force --groth16
 ```
 
 ### Sudoku (noname)
