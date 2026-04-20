@@ -6,9 +6,9 @@ import '@ton/test-utils';
 import * as snarkjs from 'snarkjs';
 import path from 'path';
 
+import { getExportTonVerifier } from './export-ton-verifier';
 import { GasLogAndSave } from './gas-logger';
-import { Verifier } from '../wrappers/Verifier';
-import { groth16CompressProof } from 'export-ton-verifier';
+import { Verifier } from '../wrappers/Verifier_func';
 
 const wasmPath = path.join(__dirname, '../circuits/Multiplier/Multiplier_js', 'Multiplier.wasm');
 const zkeyPath = path.join(__dirname, '../circuits/Multiplier', 'Multiplier_final.zkey');
@@ -52,6 +52,7 @@ describe('Verifier_multiplier_func', () => {
     });
 
     it('should verify', async () => {
+        const { groth16CompressProof } = getExportTonVerifier();
         const input = {
             a: '342',
             b: '1245',

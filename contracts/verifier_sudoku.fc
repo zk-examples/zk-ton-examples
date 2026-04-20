@@ -1,3 +1,4 @@
+
 #include "imports/stdlib.fc";
 
 ;; ops
@@ -100,14 +101,12 @@ const int verifier::nPublic = 81;
 ;; error codes
 const int verifier::err::public_not_present = 257;
 const int verifier::err::too_many_publics = 258;
-const int verifier::err::index_out_of_range = 259;
 const int verifier::err::wrong_proof = 260;
 
 ;; bls intrinsics
 slice bls_g1_add(slice x, slice y) asm "BLS_G1_ADD";
 slice bls_g1_neg(slice x) asm "BLS_G1_NEG";
 int bls_pairing(slice x1, slice y1, slice x2, slice y2, slice x3, slice y3, slice x4, slice y4, int n) asm "BLS_PAIRING";
-
 
 slice bls_g1_multiexp_7(
     slice x1, int y1,
@@ -119,6 +118,7 @@ slice bls_g1_multiexp_7(
     slice x7, int y7
     , int n
 ) asm "BLS_G1_MULTIEXP";
+
 slice bls_g1_multiexp_4(
     slice x1, int y1,
     slice x2, int y2,

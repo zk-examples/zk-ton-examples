@@ -4,10 +4,9 @@ import '@ton/test-utils';
 
 import * as snarkjs from 'snarkjs';
 
+import { getExportTonVerifier } from './export-ton-verifier';
 import { GasLogAndSave } from './gas-logger';
 import { Verifier } from '../build/Verifier_ark_tact/Verifier_ark_tact_Verifier';
-
-import { dictFromInputList, groth16CompressProof } from 'export-ton-verifier';
 
 const verificationKey = require('../circuits/Arkworks/MulCircuit/json/verification_key.json');
 const proofFile = require('../circuits/Arkworks/MulCircuit/json/proof.json');
@@ -52,19 +51,21 @@ describe('Verifier_ark_tact', () => {
     });
 
     it('should verify', async () => {
+        const { dictFromInputList, groth16CompressProof } = getExportTonVerifier();
         const publicSignals: snarkjs.PublicSignals = proofFile.public_signals;
 
         const isVerify = await snarkjs.groth16.verify(verificationKey, publicSignals, proofFile);
         expect(isVerify).toBe(true);
 
         const { pi_a, pi_b, pi_c, pubInputs } = await groth16CompressProof(proofFile, publicSignals);
+        const pubInputsDict = dictFromInputList(pubInputs);
 
         expect(
             await verifier.getVerify(
                 beginCell().storeBuffer(pi_a).endCell().asSlice(),
                 beginCell().storeBuffer(pi_b).endCell().asSlice(),
                 beginCell().storeBuffer(pi_c).endCell().asSlice(),
-                dictFromInputList(pubInputs),
+                pubInputsDict,
             ),
         ).toBe(true);
 
@@ -78,7 +79,7 @@ describe('Verifier_ark_tact', () => {
                 piA: beginCell().storeBuffer(pi_a).endCell().asSlice(),
                 piB: beginCell().storeBuffer(pi_b).endCell().asSlice(),
                 piC: beginCell().storeBuffer(pi_c).endCell().asSlice(),
-                pubInputs: dictFromInputList(pubInputs),
+                pubInputs: pubInputsDict,
             },
         );
 

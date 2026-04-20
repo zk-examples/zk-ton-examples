@@ -6,10 +6,9 @@ import '@ton/test-utils';
 import * as snarkjs from 'snarkjs';
 import path from 'path';
 
+import { getExportTonVerifier } from './export-ton-verifier';
 import { GasLogAndSave } from './gas-logger';
-import { Verifier } from '../wrappers/Verifier';
-
-import { groth16CompressProof } from 'export-ton-verifier';
+import { Verifier } from '../wrappers/Verifier_tolk';
 
 const wtnsPath = path.join(__dirname, '../circuits/Sudoku/', 'Sudoku.wtns');
 const zkeyPath = path.join(__dirname, '../circuits/Sudoku/', 'Sudoku_final.zkey');
@@ -53,6 +52,7 @@ describe('Verifier_sudoku_tolk', () => {
     });
 
     it('should verify', async () => {
+        const { groth16CompressProof } = getExportTonVerifier();
         const input = {
             a: '342',
             b: '1245',

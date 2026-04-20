@@ -42,15 +42,16 @@ snarkjs zkey export verificationkey Multiplier_final.zkey verification_key.json
 
 cd ../..
 
+# export Tolk contract
+npx export-ton-verifier ./circuits/Multiplier/Multiplier_final.zkey ./contracts/verifier_multiplier.tolk
 # export FunC contract
-npx export-ton-verifier ./circuits/Multiplier/Multiplier_final.zkey ./contracts/verifier_multiplier.fc
+npx export-ton-verifier ./circuits/Multiplier/Multiplier_final.zkey ./contracts/verifier_multiplier.fc --func
 # export Tact contract
 npx export-ton-verifier ./circuits/Multiplier/Multiplier_final.zkey ./contracts/verifier_multiplier.tact --tact
-# export Tolk contract
-npx export-ton-verifier ./circuits/Multiplier/Multiplier_final.zkey ./contracts/verifier_multiplier.tolk --tolk
 
 # Only copy the TypeScript wrapper
-npx export-ton-verifier import-wrapper ./wrappers/Verifier1.ts --force --groth16
+npx export-ton-verifier import-wrapper ./wrappers/Verifier_tolk.ts --groth16
+npx export-ton-verifier import-wrapper ./wrappers/Verifier_func.ts --groth16 --func
 ```
 
 ### Sudoku (noname)
@@ -75,12 +76,12 @@ snarkjs groth16 prove Sudoku_final.zkey Sudoku.wtns proof.json public.json
 # Verifying a Proof
 snarkjs groth16 verify verification_key.json public.json proof.json
 
+# export Tolk contract
+npx export-ton-verifier ./circuits/Sudoku/Sudoku_final.zkey ./contracts/verifier_sudoku.tolk
 # export FunC contract
-npx export-ton-verifier ./circuits/Sudoku/Sudoku_final.zkey ./contracts/verifier_sudoku.fc
+npx export-ton-verifier ./circuits/Sudoku/Sudoku_final.zkey ./contracts/verifier_sudoku.fc --func
 # export Tact contract
 npx export-ton-verifier ./circuits/Sudoku/Sudoku_final.zkey ./contracts/verifier_sudoku.tact --tact
-# export Tolk contract
-npx export-ton-verifier ./circuits/Sudoku/Sudoku_final.zkey ./contracts/verifier_sudoku.tolk --tolk
 ```
 
 ### Gnark and Arkworks
@@ -112,15 +113,15 @@ go get github.com/mysteryon88/gnark-to-snarkjs@latest
 # compilation, export
 go run main.go
 
+# export Tolk contract
+npx export-ton-verifier ./circuits/cubic-gnark/verification_key.json ./contracts/verifier_cubic.tolk
 # export FunC contract
-npx export-ton-verifier ./circuits/cubic-gnark/verification_key.json ./contracts/verifier_cubic.fc
+npx export-ton-verifier ./circuits/cubic-gnark/verification_key.json ./contracts/verifier_cubic.fc --func
 # export Tact contract
 npx export-ton-verifier ./circuits/cubic-gnark/verification_key.json ./contracts/verifier_cubic.tact --tact
-# export Tolk contract
-npx export-ton-verifier ./circuits/cubic-gnark/verification_key.json ./contracts/verifier_cubic.tolk --tolk
 
 # testing contracts
-npx blueorint build
+npx blueprint build --all
 npx blueprint test Verifier_cubic_tact
 ```
 
@@ -135,14 +136,14 @@ cargo add ark-snarkjs
 # compilation, export
 cargo run
 
+# export Tolk contract
+npx export-ton-verifier ./circuits/Arkworks/MulCircuit/json/verification_key.json ./contracts/verifier_ark.tolk
 # export FunC contract
-npx export-ton-verifier ./circuits/Arkworks/MulCircuit/json/verification_key.json ./contracts/verifier_ark.fc
+npx export-ton-verifier ./circuits/Arkworks/MulCircuit/json/verification_key.json ./contracts/verifier_ark.fc --func
 # export Tact contract
 npx export-ton-verifier ./circuits/Arkworks/MulCircuit/json/verification_key.json ./contracts/verifier_ark.tact --tact
-# export Tolk contract
-npx export-ton-verifier ./circuits/Arkworks/MulCircuit/json/verification_key.json ./contracts/verifier_ark.tolk --tolk
 
 # testing contracts
-npx blueorint build --all
+npx blueprint build --all
 npx blueprint test Verifier_ark
 ```

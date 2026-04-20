@@ -5,10 +5,9 @@ import '@ton/test-utils';
 import * as snarkjs from 'snarkjs';
 import path from 'path';
 
+import { getExportTonVerifier } from './export-ton-verifier';
 import { GasLogAndSave } from './gas-logger';
 import { Verifier } from '../build/Verifier_multiplier_tact/Verifier_multiplier_tact_Verifier';
-
-import { dictFromInputList, groth16CompressProof } from 'export-ton-verifier';
 
 const wasmPath = path.join(__dirname, '../circuits/Multiplier/Multiplier_js', 'Multiplier.wasm');
 const zkeyPath = path.join(__dirname, '../circuits/Multiplier', 'Multiplier_final.zkey');
@@ -54,6 +53,7 @@ describe('Verifier_multiplier_tact', () => {
     });
 
     it('should verify', async () => {
+        const { dictFromInputList, groth16CompressProof } = getExportTonVerifier();
         const input = {
             a: '435',
             b: '32',
@@ -64,13 +64,14 @@ describe('Verifier_multiplier_tact', () => {
         expect(isVerify).toBe(true);
 
         const { pi_a, pi_b, pi_c, pubInputs } = await groth16CompressProof(proof, publicSignals);
+        const pubInputsDict = dictFromInputList(pubInputs);
 
         expect(
             await verifier.getVerify(
                 beginCell().storeBuffer(pi_a).endCell().asSlice(),
                 beginCell().storeBuffer(pi_b).endCell().asSlice(),
                 beginCell().storeBuffer(pi_c).endCell().asSlice(),
-                dictFromInputList(pubInputs),
+                pubInputsDict,
             ),
         ).toBe(true);
 
@@ -84,7 +85,7 @@ describe('Verifier_multiplier_tact', () => {
                 piA: beginCell().storeBuffer(pi_a).endCell().asSlice(),
                 piB: beginCell().storeBuffer(pi_b).endCell().asSlice(),
                 piC: beginCell().storeBuffer(pi_c).endCell().asSlice(),
-                pubInputs: dictFromInputList(pubInputs),
+                pubInputs: pubInputsDict,
             },
         );
 

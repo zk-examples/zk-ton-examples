@@ -6,14 +6,17 @@ import '@ton/test-utils';
 import * as snarkjs from 'snarkjs';
 import path from 'path';
 
+import { getExportTonVerifier } from './export-ton-verifier';
 import { GasLogAndSave } from './gas-logger';
-import { Verifier } from '../wrappers/Verifier';
-
-import { groth16CompressProof } from 'export-ton-verifier';
+import { Verifier } from '../wrappers/Verifier_tolk';
 
 const wasmPath = path.join(__dirname, '../circuits/Multiplier/Multiplier_js', 'Multiplier.wasm');
 const zkeyPath = path.join(__dirname, '../circuits/Multiplier', 'Multiplier_final.zkey');
 const verificationKey = require('../circuits/Multiplier/verification_key.json');
+const input = {
+    a: '435',
+    b: '32',
+};
 
 // npx blueprint test Verifier_multiplier_tolk
 describe('Verifier_multiplier_tolk', () => {
@@ -32,6 +35,19 @@ describe('Verifier_multiplier_tolk', () => {
     let blockchain: Blockchain;
     let deployer: SandboxContract<TreasuryContract>;
     let verifier: SandboxContract<Verifier>;
+
+    async function buildValidVerifyPayload(proofInput = input) {
+        const { groth16CompressProof } = getExportTonVerifier();
+        const { proof, publicSignals } = await snarkjs.groth16.fullProve(proofInput, wasmPath, zkeyPath);
+
+        expect(await snarkjs.groth16.verify(verificationKey, publicSignals, proof)).toBe(true);
+
+        return {
+            ...(await groth16CompressProof(proof, publicSignals)),
+            proof,
+            publicSignals,
+        };
+    }
 
     beforeEach(async () => {
         blockchain = await Blockchain.create();
@@ -53,16 +69,7 @@ describe('Verifier_multiplier_tolk', () => {
     });
 
     it('should verify', async () => {
-        const input = {
-            a: '435',
-            b: '32',
-        };
-        const { proof, publicSignals } = await snarkjs.groth16.fullProve(input, wasmPath, zkeyPath);
-
-        const isVerify = await snarkjs.groth16.verify(verificationKey, publicSignals, proof);
-        expect(isVerify).toBe(true);
-
-        const { pi_a, pi_b, pi_c, pubInputs } = await groth16CompressProof(proof, publicSignals);
+        const { pi_a, pi_b, pi_c, pubInputs } = await buildValidVerifyPayload();
 
         expect(await verifier.getVerify({ pi_a, pi_b, pi_c, pubInputs })).toBe(true);
 
@@ -81,5 +88,108 @@ describe('Verifier_multiplier_tolk', () => {
         });
 
         GAS_LOG.rememberGas('Verify', verifyResult.transactions.slice(1));
+    });
+
+    it('should reject tampered proof', async () => {
+        const validPayload = await buildValidVerifyPayload();
+        const tamperedPayload = await buildValidVerifyPayload({
+            a: '436',
+            b: '32',
+        });
+
+        expect(await snarkjs.groth16.verify(verificationKey, validPayload.publicSignals, tamperedPayload.proof)).toBe(
+            false,
+        );
+
+        expect(
+            await verifier.getVerify({
+                pi_a: tamperedPayload.pi_a,
+                pi_b: tamperedPayload.pi_b,
+                pi_c: tamperedPayload.pi_c,
+                pubInputs: validPayload.pubInputs,
+            }),
+        ).toBe(false);
+
+        const verifyResult = await verifier.sendVerify(deployer.getSender(), {
+            pi_a: tamperedPayload.pi_a,
+            pi_b: tamperedPayload.pi_b,
+            pi_c: tamperedPayload.pi_c,
+            pubInputs: validPayload.pubInputs,
+            value: toNano('0.15'),
+        });
+
+        expect(verifyResult.transactions).toHaveTransaction({
+            from: deployer.address,
+            to: verifier.address,
+            success: false,
+            exitCode: 260,
+        });
+    });
+
+    it('should reject tampered public inputs', async () => {
+        const { proof, publicSignals, pi_a, pi_b, pi_c } = await buildValidVerifyPayload();
+        const tamperedPublicSignals = [...publicSignals];
+        tamperedPublicSignals[0] = (BigInt(tamperedPublicSignals[0]) + 1n).toString();
+
+        expect(await snarkjs.groth16.verify(verificationKey, tamperedPublicSignals, proof)).toBe(false);
+
+        const { groth16CompressProof } = getExportTonVerifier();
+        const { pubInputs: tamperedPubInputs } = await groth16CompressProof(proof, tamperedPublicSignals);
+
+        expect(await verifier.getVerify({ pi_a, pi_b, pi_c, pubInputs: tamperedPubInputs })).toBe(false);
+
+        const verifyResult = await verifier.sendVerify(deployer.getSender(), {
+            pi_a,
+            pi_b,
+            pi_c,
+            pubInputs: tamperedPubInputs,
+            value: toNano('0.15'),
+        });
+
+        expect(verifyResult.transactions).toHaveTransaction({
+            from: deployer.address,
+            to: verifier.address,
+            success: false,
+            exitCode: 260,
+        });
+    });
+
+    it('should reject invalid public input length', async () => {
+        const { pi_a, pi_b, pi_c, pubInputs } = await buildValidVerifyPayload();
+        const missingPubInputs: bigint[] = [];
+        const extraPubInputs = [...pubInputs, 1n];
+
+        await expect(verifier.getVerify({ pi_a, pi_b, pi_c, pubInputs: missingPubInputs })).rejects.toThrow();
+        await expect(verifier.getVerify({ pi_a, pi_b, pi_c, pubInputs: extraPubInputs })).rejects.toThrow();
+
+        const missingInputsResult = await verifier.sendVerify(deployer.getSender(), {
+            pi_a,
+            pi_b,
+            pi_c,
+            pubInputs: missingPubInputs,
+            value: toNano('0.15'),
+        });
+
+        expect(missingInputsResult.transactions).toHaveTransaction({
+            from: deployer.address,
+            to: verifier.address,
+            success: false,
+            exitCode: 258,
+        });
+
+        const extraInputsResult = await verifier.sendVerify(deployer.getSender(), {
+            pi_a,
+            pi_b,
+            pi_c,
+            pubInputs: extraPubInputs,
+            value: toNano('0.15'),
+        });
+
+        expect(extraInputsResult.transactions).toHaveTransaction({
+            from: deployer.address,
+            to: verifier.address,
+            success: false,
+            exitCode: 258,
+        });
     });
 });

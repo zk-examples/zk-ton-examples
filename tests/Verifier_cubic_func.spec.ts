@@ -5,9 +5,9 @@ import '@ton/test-utils';
 
 import * as snarkjs from 'snarkjs';
 
+import { getExportTonVerifier } from './export-ton-verifier';
 import { GasLogAndSave } from './gas-logger';
-import { Verifier } from '../wrappers/Verifier';
-import { groth16CompressProof } from 'export-ton-verifier';
+import { Verifier } from '../wrappers/Verifier_func';
 
 const verificationKey = require('../circuits/cubic-gnark/verification_key.json');
 const proofFile = require('../circuits/cubic-gnark/proof.json');
@@ -50,6 +50,7 @@ describe('Verifier_cubic_func', () => {
     });
 
     it('should verify', async () => {
+        const { groth16CompressProof } = getExportTonVerifier();
         const publicSignals: snarkjs.PublicSignals = proofFile.publicSignals;
 
         const isVerify = await snarkjs.groth16.verify(verificationKey, publicSignals, proofFile);

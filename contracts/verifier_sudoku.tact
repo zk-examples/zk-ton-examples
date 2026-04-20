@@ -1,3 +1,4 @@
+
 // ASM intrinsics
 asm fun blsG1Add(x: Slice, y: Slice): Slice { BLS_G1_ADD }
 asm fun blsG1Neg(x: Slice): Slice { BLS_G1_NEG }
@@ -9,7 +10,6 @@ asm fun blsPairing(
   n: Int
 ): Int { BLS_PAIRING }
 
-
 asm fun blsG1Multiexp_7(
   x1: Slice, y1: Int,
   x2: Slice, y2: Int,
@@ -20,6 +20,7 @@ asm fun blsG1Multiexp_7(
   x7: Slice, y7: Int
   , n: Int
 ): Slice { BLS_G1_MULTIEXP }
+
 asm fun blsG1Multiexp_4(
   x1: Slice, y1: Int,
   x2: Slice, y2: Int,
@@ -34,7 +35,7 @@ const vk_delta_2: Slice = rawSlice("aecc523f51e16184d52b69af614f9346a8fa9dcdb3cc
 const vk_alpha_1: Slice = rawSlice("93a3f95cbc299feeb9e9056dd15fdbaaf2015236573479597994dbf08b251c54829152d3fb818e56b1bcb289315d9304");
 const vk_beta_2 : Slice = rawSlice("86a610cf5d228d04dc0ba37791497053bbff0c2a341925dfce424cffb3b9a5b8bdae8a316764626c80f910344532a0ed0919b9b76da74745b2175160fcdad651e16dc9d92579802925c299b4ffb4d8c7419cb9dc8e76223be3a571d85fb27533");
 
-// IC constants (IC0 — constant term)
+// IC constants (IC0 is the constant term)
 const IC0: Slice = rawSlice("aca8a097ec4d0973419a55635d08f7106191e32faad59ef23aeef583a0cd33cc4f5d155c669dacaefb77c49a67d4dcbc");
 const IC1: Slice = rawSlice("976baa064a70d9739778564bf95c53832b24e6b5affcbbb729f0b1651d54c53e736b76b7a821b24743d9ba9dc67d8634");
 const IC2: Slice = rawSlice("81ec65333b05e0e8fc0b1f7ff075a4b31a1df9e4a2f5081c86c4f728ad0358df08809ead7c439fd2e4f42d9885db2b65");
@@ -121,7 +122,6 @@ const IC81: Slice = rawSlice("aadc70ebe1233452b44683fc90c5823bc014d4ae880a947a5d
 // Error codes
 const ERR_PUBLIC_NOT_PRESENT: Int = 257;
 const ERR_TOO_MANY_PUBLICS: Int = 258;
-const ERR_INDEX_OUT_OF_RANGE: Int = 259;
 const ERR_WRONG_PROOF: Int = 260;
 
 // IC selection helper by index: 1 -> IC1, 2 -> IC2, ...
@@ -207,8 +207,7 @@ fun ic(idx: Int): Slice {
   if (idx == 79) { return IC79; }
   if (idx == 80) { return IC80; }
   if (idx == 81) { return IC81; }
-  return IC0; // Fallback
-  // nativeThrow(ERR_INDEX_OUT_OF_RANGE);
+  return IC0; // Unreachable for generated batches
 }
 
 // Safe getter for public inputs: throws ERR_PUBLIC_NOT_PRESENT
@@ -244,9 +243,9 @@ contract Verifier {
     pubInputs: map<Int as uint32, Int>
   ): Bool {
 
-    // --- acc = Σ(v_i * IC_{i+1}) (ONLY public-dependent part) ---
+    // acc = sum(v_i * IC_{i+1}) (only the public-dependent part)
     let haveAcc: Bool = false;
-    let acc: Slice = IC0; // placeholder until haveAcc=true
+    let acc: Slice = IC0; // placeholder until haveAcc = true
 
     // Loop over full batches of 7
     let done: Int = 0;
@@ -260,8 +259,8 @@ contract Verifier {
         ic(done + 4), getPub(pubInputs, done + 3),
         ic(done + 5), getPub(pubInputs, done + 4),
         ic(done + 6), getPub(pubInputs, done + 5),
-        ic(done + 7), getPub(pubInputs, done + 6),
-        7
+        ic(done + 7), getPub(pubInputs, done + 6)
+        , 7
       );
 
       if (!haveAcc) {
@@ -296,7 +295,7 @@ contract Verifier {
     // Cheap guard: reject obvious extras
     nativeThrowIf(ERR_TOO_MANY_PUBLICS, pubInputs.exists(81));
 
-    // --- cpub = IC0 + acc (IC0 is added exactly once) ---
+    // cpub = IC0 + acc (IC0 is added exactly once)
     let cpub: Slice = haveAcc ? blsG1Add(acc, IC0) : IC0;
 
     // Pairing check
