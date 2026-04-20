@@ -42,22 +42,13 @@ fun loadNextPubInput(mutate payload: slice): int {
   return payload.loadInt(257);
 }
 
-fun groth16Verify(
+fun finishGroth16(
   piA: slice,
   piB: slice,
   piC: slice,
-  pubInput0: int
+  acc: slice,
+  haveAcc: bool
 ): bool {
-  // Compute: cpub = IC0 + sum(pubInputs[i] * IC(i+1))
-  var haveAcc: bool = false;
-  var acc: slice = IC0; // placeholder until haveAcc == true
-
-  acc = blsG1Multiexp_1(
-    IC1, pubInput0
-    , 1
-  );
-  haveAcc = true;
-
   // Final cpub = IC0 + acc (IC0 is always added exactly once)
   var cpub: slice;
   if (!haveAcc) {
@@ -79,6 +70,51 @@ fun groth16Verify(
   return ok != 0;
 }
 
+fun groth16VerifyPayload(
+  piA: slice,
+  piB: slice,
+  piC: slice,
+  mutate payload: slice
+): bool {
+  // Compute: cpub = IC0 + sum(pubInputs[i] * IC(i+1))
+  var haveAcc: bool = false;
+  var acc: slice = IC0; // placeholder until haveAcc == true
+
+  var y1: int = loadNextPubInput(mutate payload);
+  acc = blsG1Multiexp_1(
+    IC1, y1
+    , 1
+  );
+  haveAcc = true;
+
+  if (payload.remainingBitsCount() != 0 || payload.remainingRefsCount() != 0) {
+    throw(ERR_INVALID_INPUTS);
+  }
+
+  return finishGroth16(piA, piB, piC, acc, haveAcc);
+}
+
+fun groth16VerifyArray(
+  piA: slice,
+  piB: slice,
+  piC: slice,
+  pubInputs: array<int>
+): bool {
+  if (pubInputs.size() != N_PUBLIC) { throw(ERR_INVALID_INPUTS); }
+
+  // Compute: cpub = IC0 + sum(pubInputs[i] * IC(i+1))
+  var haveAcc: bool = false;
+  var acc: slice = IC0; // placeholder until haveAcc == true
+
+  acc = blsG1Multiexp_1(
+    IC1, pubInputs.get(0)
+    , 1
+  );
+  haveAcc = true;
+
+  return finishGroth16(piA, piB, piC, acc, haveAcc);
+}
+
 struct (0x3b3cca17) Verify {
   piA: cell
   piB: cell
@@ -93,17 +129,8 @@ fun verifyProof(msg: Verify): bool {
   var payload: slice = msg.pubInputs;
 
   if (payload.loadUint(8) != N_PUBLIC) { throw(ERR_INVALID_INPUTS); }
-  var pubInput0: int = loadNextPubInput(mutate payload);
-  if (payload.remainingBitsCount() != 0 || payload.remainingRefsCount() != 0) {
-    throw(ERR_INVALID_INPUTS);
-  }
 
-  return groth16Verify(
-    piA,
-    piB,
-    piC,
-    pubInput0
-  );
+  return groth16VerifyPayload(piA, piB, piC, mutate payload);
 }
 
 fun onInternalMessage(inMsg: InMessage) {
@@ -118,12 +145,5 @@ fun onInternalMessage(inMsg: InMessage) {
 }
 
 get fun verify(piA: slice, piB: slice, piC: slice, pubInputs: array<int>): bool {
-  if (pubInputs.size() != N_PUBLIC) { throw(ERR_INVALID_INPUTS); }
-
-  return groth16Verify(
-    piA,
-    piB,
-    piC,
-    pubInputs.get(0)
-  );
+  return groth16VerifyArray(piA, piB, piC, pubInputs);
 }
