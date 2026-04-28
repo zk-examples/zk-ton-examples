@@ -44,6 +44,7 @@ cd ../..
 
 # export Tolk contract
 npx export-ton-verifier ./circuits/Multiplier/Multiplier_final.zkey ./contracts/verifier_multiplier.tolk
+npx export-ton-verifier ./circuits/Multiplier/Multiplier_final.zkey ./contracts/verifier_multiplier.tolk --contract-name multiplierVerifier
 # export FunC contract
 npx export-ton-verifier ./circuits/Multiplier/Multiplier_final.zkey ./contracts/verifier_multiplier.fc --func
 # export Tact contract
@@ -115,6 +116,7 @@ go run main.go
 
 # export Tolk contract
 npx export-ton-verifier ./circuits/cubic-gnark/verification_key.json ./contracts/verifier_cubic.tolk
+npx export-ton-verifier ./circuits/cubic-gnark/verification_key.json ./contracts/verifier_cubic.tolk --contract-name Cubic
 # export FunC contract
 npx export-ton-verifier ./circuits/cubic-gnark/verification_key.json ./contracts/verifier_cubic.fc --func
 # export Tact contract
@@ -138,6 +140,7 @@ cargo run
 
 # export Tolk contract
 npx export-ton-verifier ./circuits/Arkworks/MulCircuit/json/verification_key.json ./contracts/verifier_ark.tolk
+npx export-ton-verifier ./circuits/Arkworks/MulCircuit/json/verification_key.json ./contracts/verifier_ark.tolk --contract-name arkVerifier
 # export FunC contract
 npx export-ton-verifier ./circuits/Arkworks/MulCircuit/json/verification_key.json ./contracts/verifier_ark.fc --func
 # export Tact contract

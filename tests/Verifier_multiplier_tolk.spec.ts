@@ -71,7 +71,7 @@ describe('Verifier_multiplier_tolk', () => {
     it('should verify', async () => {
         const { pi_a, pi_b, pi_c, pubInputs } = await buildValidVerifyPayload();
 
-        expect(await verifier.getVerify({ pi_a, pi_b, pi_c, pubInputs })).toBe(true);
+        expect(await verifier.getVerifyMultiplierVerifier({ pi_a, pi_b, pi_c, pubInputs })).toBe(true);
 
         const verifyResult = await verifier.sendVerify(deployer.getSender(), {
             pi_a,
@@ -102,7 +102,7 @@ describe('Verifier_multiplier_tolk', () => {
         );
 
         expect(
-            await verifier.getVerify({
+            await verifier.getVerifyMultiplierVerifier({
                 pi_a: tamperedPayload.pi_a,
                 pi_b: tamperedPayload.pi_b,
                 pi_c: tamperedPayload.pi_c,
@@ -136,7 +136,9 @@ describe('Verifier_multiplier_tolk', () => {
         const { groth16CompressProof } = getExportTonVerifier();
         const { pubInputs: tamperedPubInputs } = await groth16CompressProof(proof, tamperedPublicSignals);
 
-        expect(await verifier.getVerify({ pi_a, pi_b, pi_c, pubInputs: tamperedPubInputs })).toBe(false);
+        expect(await verifier.getVerifyMultiplierVerifier({ pi_a, pi_b, pi_c, pubInputs: tamperedPubInputs })).toBe(
+            false,
+        );
 
         const verifyResult = await verifier.sendVerify(deployer.getSender(), {
             pi_a,
@@ -159,8 +161,12 @@ describe('Verifier_multiplier_tolk', () => {
         const missingPubInputs: bigint[] = [];
         const extraPubInputs = [...pubInputs, 1n];
 
-        await expect(verifier.getVerify({ pi_a, pi_b, pi_c, pubInputs: missingPubInputs })).rejects.toThrow();
-        await expect(verifier.getVerify({ pi_a, pi_b, pi_c, pubInputs: extraPubInputs })).rejects.toThrow();
+        await expect(
+            verifier.getVerifyMultiplierVerifier({ pi_a, pi_b, pi_c, pubInputs: missingPubInputs }),
+        ).rejects.toThrow();
+        await expect(
+            verifier.getVerifyMultiplierVerifier({ pi_a, pi_b, pi_c, pubInputs: extraPubInputs }),
+        ).rejects.toThrow();
 
         const missingInputsResult = await verifier.sendVerify(deployer.getSender(), {
             pi_a,

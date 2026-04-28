@@ -1,10 +1,10 @@
 {
   "gas": {
     "Deploy": 418,
-    "Verify": 88747
+    "Verify": 88655
   },
   "codeSize": {
-    "Verifier_multiplier_tolk bits": 6493,
-    "Verifier_multiplier_tolk cells": 14
+    "Verifier_multiplier_tolk bits": 5805,
+    "Verifier_multiplier_tolk cells": 11
   }
 }

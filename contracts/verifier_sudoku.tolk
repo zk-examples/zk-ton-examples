@@ -13,8 +13,9 @@ const ERR_INVALID_INPUTS: int = 258
 const ERR_INDEX_OUT_OF_RANGE: int = 259
 const ERR_WRONG_PROOF: int = 260
 
+
 @pure fun blsG1Add(x: slice, y: slice): slice asm "BLS_G1_ADD";
-@pure fun blsG1Neg(x: slice): slice       asm "BLS_G1_NEG";
+@pure fun blsG1Neg(x: slice): slice asm "BLS_G1_NEG";
 @pure fun blsPairing(
   x1: slice, y1: slice,
   x2: slice, y2: slice,
@@ -160,9 +161,9 @@ fun finishGroth16(
   // Pairing check: e(cpub, gamma) * e(-piA, piB) * e(piC, delta) * e(alpha, beta) == 1
   var piANeg: slice = blsG1Neg(piA);
   var ok: int = blsPairing(
-    cpub,       VK_GAMMA_2,
-    piANeg,     piB,
-    piC,        VK_DELTA_2,
+    cpub,         VK_GAMMA_2,
+    piANeg,       piB,
+    piC,          VK_DELTA_2,
     VK_ALPHA_1, VK_BETA_2,
     4
   );
@@ -245,12 +246,7 @@ fun groth16VerifyPayload(
   return finishGroth16(piA, piB, piC, acc, haveAcc);
 }
 
-fun groth16VerifyArray(
-  piA: slice,
-  piB: slice,
-  piC: slice,
-  pubInputs: array<int>
-): bool {
+fun groth16VerifyArray(piA: slice, piB: slice, piC: slice, pubInputs: array<int>): bool {
   if (pubInputs.size() != N_PUBLIC) { throw(ERR_INVALID_INPUTS); }
 
   // Compute: cpub = IC0 + sum(pubInputs[i] * IC(i+1))
@@ -339,3 +335,4 @@ fun onInternalMessage(inMsg: InMessage) {
 get fun verify(piA: slice, piB: slice, piC: slice, pubInputs: array<int>): bool {
   return groth16VerifyArray(piA, piB, piC, pubInputs);
 }
+

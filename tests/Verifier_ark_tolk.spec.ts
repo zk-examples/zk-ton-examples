@@ -58,7 +58,7 @@ describe('Verifier_ark_tolk', () => {
 
         const { pi_a, pi_b, pi_c, pubInputs } = await groth16CompressProof(proofFile, publicSignals);
 
-        expect(await verifier.getVerify({ pi_a, pi_b, pi_c, pubInputs })).toBe(true);
+        expect(await verifier.getVerifyArkVerifier({ pi_a, pi_b, pi_c, pubInputs })).toBe(true);
 
         const verifyResult = await verifier.sendVerify(deployer.getSender(), {
             pi_a,
