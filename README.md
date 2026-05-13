@@ -23,6 +23,10 @@ npm install export-ton-verifier@latest
 
 ## How to use
 
+```sh
+npm run generate:verifiers
+```
+
 ### Multiplier (circom)
 
 ```sh

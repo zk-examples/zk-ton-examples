@@ -12,5 +12,12 @@
         "skipLibCheck": true,
         "types": ["node", "jest"]
     },
-    "include": ["jest.config.ts", "jest.setup.ts", "tests/**/*.ts", "wrappers/**/*.ts", "build/**/*.ts"]
+    "include": [
+        "jest.config.ts",
+        "jest.setup.ts",
+        "tests/**/*.ts",
+        "wrappers/**/*.ts",
+        "build/**/*.ts",
+        "scripts/**/*.ts"
+    ]
 }

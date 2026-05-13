@@ -39,8 +39,6 @@ slice bls_g1_multiexp_1(
     slice piC,
     cell pubInputs
 ) impure {
-    int res = 0;
-
 
     ;; extract public inputs by keys 0..nPublic-1
     (slice input0, int ok0) = pubInputs~udict_delete_get?(verifier::publicInputKeyLen, 0);
@@ -69,12 +67,7 @@ slice bls_g1_multiexp_1(
         4
     );
 
-    if (a == 0) {
-        res = 0;
-    } else {
-        res = 1;
-    }
-    return (res);
+    return (0 - (a != 0));
 }
 
 (int) verifyProof(
@@ -93,7 +86,7 @@ slice bls_g1_multiexp_1(
     );
 }
 
-() recv_internal(int my_balance, int msg_value, cell in_msg_full, slice in_msg_body) impure {
+() recv_internal(cell in_msg_full, slice in_msg_body) impure {
     if (in_msg_body.slice_empty?()) {
         return ();
     }
@@ -105,8 +98,7 @@ slice bls_g1_multiexp_1(
     int op = in_msg_body~load_uint(32);
 
     if (op == op::verify) {
-        int res = verifyProof(in_msg_body);
-        throw_unless(verifier::err::wrong_proof, res == 1);
+        throw_unless(verifier::err::wrong_proof, verifyProof(in_msg_body));
         return ();
     }
     throw(0xffff);

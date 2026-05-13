@@ -31,6 +31,12 @@ const ERR_TOO_MANY_PUBLICS: Int = 258;
 const ERR_WRONG_PROOF: Int = 260;
 
 
+fun assertNoExtraPubInputs(pubInputs: map<Int as uint32, Int>) {
+  foreach (key, _ in pubInputs) {
+    nativeThrowUnless(ERR_TOO_MANY_PUBLICS, key < 1);
+  }
+}
+
 // Safe getter for public inputs: throws ERR_PUBLIC_NOT_PRESENT
 fun getPub(pubInputs: map<Int as uint32, Int>, k: Int): Int {
   let v = pubInputs.get(k);
@@ -64,23 +70,16 @@ contract Verifier {
     pubInputs: map<Int as uint32, Int>
   ): Bool {
 
-    // acc = sum(v_i * IC_{i+1}) (only the public-dependent part)
-    let haveAcc: Bool = false;
-    let acc: Slice = IC0; // placeholder until haveAcc = true
+    assertNoExtraPubInputs(pubInputs);
 
     // Single batch (no loop and no ic())
-    acc = blsG1Multiexp_1(
+    let acc: Slice = blsG1Multiexp_1(
       IC1, getPub(pubInputs, 0)
       , 1
     );
-    haveAcc = true;
 
-    // Cheap guard: reject obvious extras
-    nativeThrowIf(ERR_TOO_MANY_PUBLICS, pubInputs.exists(1));
+    let cpub: Slice = blsG1Add(acc, IC0);
 
-
-    // cpub = IC0 + acc (IC0 is added exactly once)
-    let cpub: Slice = haveAcc ? blsG1Add(acc, IC0) : IC0;
 
     // Pairing check
     let piANeg: Slice = blsG1Neg(piA);
