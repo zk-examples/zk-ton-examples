@@ -1,199 +1,137 @@
-import { Blockchain, SandboxContract, TreasuryContract } from '@ton/sandbox';
-import { compile } from '@ton/blueprint';
-import { Cell, toNano } from '@ton/core';
-import '@ton/test-utils';
-
-import * as snarkjs from 'snarkjs';
-import path from 'path';
-
-import { getExportTonVerifier } from './export-ton-verifier';
-import { GasLogAndSave } from './gas-logger';
 import { Verifier } from '../wrappers/Verifier_tolk';
+import { GasLogAndSave } from './gas-logger';
+import {
+    buildMultiplierPayload,
+    compressProof,
+    getMultiplierPayload,
+    verifyMultiplierProof,
+} from './groth16-payloads';
+import {
+    callFuncOrTolkGetter,
+    deployFuncOrTolkVerifier,
+    payloadToFuncOrTolkArgs,
+    runFuncOrTolkVerifierTest,
+    sendFuncOrTolkVerify,
+} from './groth16-verifier-runner';
 
-const wasmPath = path.join(__dirname, '../circuits/Multiplier/Multiplier_js', 'Multiplier.wasm');
-const zkeyPath = path.join(__dirname, '../circuits/Multiplier', 'Multiplier_final.zkey');
-const verificationKey = require('../circuits/Multiplier/verification_key.json');
-const input = {
-    a: '435',
-    b: '32',
-};
+const TEST_NAME = 'Verifier_multiplier_tolk';
+const VERIFY_GETTER = 'getVerifyMultiplierVerifier';
+const VERIFY_VALUE = '0.15';
+
+function withPubInputs<T extends ReturnType<typeof payloadToFuncOrTolkArgs>>(payload: T, pubInputs: bigint[]) {
+    return { ...payload, pubInputs };
+}
 
 // npx blueprint test Verifier_multiplier_tolk
-describe('Verifier_multiplier_tolk', () => {
-    let code: Cell;
-    let GAS_LOG = new GasLogAndSave('Verifier_multiplier_tolk');
-
-    beforeAll(async () => {
-        code = await compile('Verifier_multiplier_tolk');
-        GAS_LOG.rememberBocSize('Verifier_multiplier_tolk', code);
-    });
+describe(TEST_NAME, () => {
+    const GAS_LOG = new GasLogAndSave(TEST_NAME);
 
     afterAll(() => {
         GAS_LOG.saveCurrentRunAfterAll();
     });
 
-    let blockchain: Blockchain;
-    let deployer: SandboxContract<TreasuryContract>;
-    let verifier: SandboxContract<Verifier>;
-
-    async function buildValidVerifyPayload(proofInput = input) {
-        const { groth16CompressProof } = getExportTonVerifier();
-        const { proof, publicSignals } = await snarkjs.groth16.fullProve(proofInput, wasmPath, zkeyPath);
-
-        expect(await snarkjs.groth16.verify(verificationKey, publicSignals, proof)).toBe(true);
-
-        return {
-            ...(await groth16CompressProof(proof, publicSignals)),
-            proof,
-            publicSignals,
-        };
+    async function deployVerifier() {
+        return deployFuncOrTolkVerifier({
+            compileName: TEST_NAME,
+            gasName: TEST_NAME,
+            Wrapper: Verifier,
+            gasLog: GAS_LOG,
+        });
     }
 
-    beforeEach(async () => {
-        blockchain = await Blockchain.create();
-
-        verifier = blockchain.openContract(Verifier.createFromConfig({}, code));
-
-        deployer = await blockchain.treasury('deployer');
-
-        const deployResult = await verifier.sendDeploy(deployer.getSender(), toNano('0.05'));
-
-        expect(deployResult.transactions).toHaveTransaction({
-            from: deployer.address,
-            to: verifier.address,
-            deploy: true,
-            success: true,
-        });
-
-        GAS_LOG.rememberGas('Deploy', deployResult.transactions.slice(1));
-    });
-
     it('should verify', async () => {
-        const { pi_a, pi_b, pi_c, pubInputs } = await buildValidVerifyPayload();
-
-        expect(await verifier.getVerifyMultiplierVerifier({ pi_a, pi_b, pi_c, pubInputs })).toBe(true);
-
-        const verifyResult = await verifier.sendVerify(deployer.getSender(), {
-            pi_a,
-            pi_b,
-            pi_c,
-            pubInputs,
-            value: toNano('0.15'),
+        await runFuncOrTolkVerifierTest({
+            compileName: TEST_NAME,
+            gasName: TEST_NAME,
+            Wrapper: Verifier,
+            gasLog: GAS_LOG,
+            payload: await getMultiplierPayload(),
+            getMethodName: VERIFY_GETTER,
+            verifyValue: VERIFY_VALUE,
         });
-
-        expect(verifyResult.transactions).toHaveTransaction({
-            from: deployer.address,
-            to: verifier.address,
-            success: true,
-        });
-
-        GAS_LOG.rememberGas('Verify', verifyResult.transactions.slice(1));
     });
 
     it('should reject tampered proof', async () => {
-        const validPayload = await buildValidVerifyPayload();
-        const tamperedPayload = await buildValidVerifyPayload({
+        const deployed = await deployVerifier();
+        const validPayload = await getMultiplierPayload();
+        const tamperedPayload = await buildMultiplierPayload({
             a: '436',
             b: '32',
         });
 
-        expect(await snarkjs.groth16.verify(verificationKey, validPayload.publicSignals, tamperedPayload.proof)).toBe(
-            false,
-        );
+        expect(await verifyMultiplierProof(tamperedPayload.proof, validPayload.publicSignals)).toBe(false);
 
-        expect(
-            await verifier.getVerifyMultiplierVerifier({
-                pi_a: tamperedPayload.pi_a,
-                pi_b: tamperedPayload.pi_b,
-                pi_c: tamperedPayload.pi_c,
-                pubInputs: validPayload.pubInputs,
-            }),
-        ).toBe(false);
-
-        const verifyResult = await verifier.sendVerify(deployer.getSender(), {
-            pi_a: tamperedPayload.pi_a,
-            pi_b: tamperedPayload.pi_b,
-            pi_c: tamperedPayload.pi_c,
+        const payloadWithTamperedProof = {
+            ...payloadToFuncOrTolkArgs(tamperedPayload),
             pubInputs: validPayload.pubInputs,
-            value: toNano('0.15'),
-        });
+        };
+        expect(await callFuncOrTolkGetter(deployed.verifier, payloadWithTamperedProof, VERIFY_GETTER)).toBe(false);
 
+        const verifyResult = await sendFuncOrTolkVerify(deployed, payloadWithTamperedProof, VERIFY_VALUE);
         expect(verifyResult.transactions).toHaveTransaction({
-            from: deployer.address,
-            to: verifier.address,
+            from: deployed.deployer.address,
+            to: deployed.verifier.address,
             success: false,
             exitCode: 260,
         });
     });
 
     it('should reject tampered public inputs', async () => {
-        const { proof, publicSignals, pi_a, pi_b, pi_c } = await buildValidVerifyPayload();
-        const tamperedPublicSignals = [...publicSignals];
+        const deployed = await deployVerifier();
+        const validPayload = await getMultiplierPayload();
+        const tamperedPublicSignals = [...validPayload.publicSignals];
         tamperedPublicSignals[0] = (BigInt(tamperedPublicSignals[0]) + 1n).toString();
 
-        expect(await snarkjs.groth16.verify(verificationKey, tamperedPublicSignals, proof)).toBe(false);
+        expect(await verifyMultiplierProof(validPayload.proof, tamperedPublicSignals)).toBe(false);
 
-        const { groth16CompressProof } = getExportTonVerifier();
-        const { pubInputs: tamperedPubInputs } = await groth16CompressProof(proof, tamperedPublicSignals);
+        const tamperedPubInputs = (await compressProof(validPayload.proof, tamperedPublicSignals)).pubInputs;
+        const payloadWithTamperedInputs = withPubInputs(payloadToFuncOrTolkArgs(validPayload), tamperedPubInputs);
 
-        expect(await verifier.getVerifyMultiplierVerifier({ pi_a, pi_b, pi_c, pubInputs: tamperedPubInputs })).toBe(
-            false,
-        );
+        expect(await callFuncOrTolkGetter(deployed.verifier, payloadWithTamperedInputs, VERIFY_GETTER)).toBe(false);
 
-        const verifyResult = await verifier.sendVerify(deployer.getSender(), {
-            pi_a,
-            pi_b,
-            pi_c,
-            pubInputs: tamperedPubInputs,
-            value: toNano('0.15'),
-        });
-
+        const verifyResult = await sendFuncOrTolkVerify(deployed, payloadWithTamperedInputs, VERIFY_VALUE);
         expect(verifyResult.transactions).toHaveTransaction({
-            from: deployer.address,
-            to: verifier.address,
+            from: deployed.deployer.address,
+            to: deployed.verifier.address,
             success: false,
             exitCode: 260,
         });
     });
 
     it('should reject invalid public input length', async () => {
-        const { pi_a, pi_b, pi_c, pubInputs } = await buildValidVerifyPayload();
+        const deployed = await deployVerifier();
+        const validPayload = await getMultiplierPayload();
+        const validPayloadArgs = payloadToFuncOrTolkArgs(validPayload);
         const missingPubInputs: bigint[] = [];
-        const extraPubInputs = [...pubInputs, 1n];
+        const extraPubInputs = [...validPayload.pubInputs, 1n];
 
         await expect(
-            verifier.getVerifyMultiplierVerifier({ pi_a, pi_b, pi_c, pubInputs: missingPubInputs }),
+            callFuncOrTolkGetter(deployed.verifier, withPubInputs(validPayloadArgs, missingPubInputs), VERIFY_GETTER),
         ).rejects.toThrow();
         await expect(
-            verifier.getVerifyMultiplierVerifier({ pi_a, pi_b, pi_c, pubInputs: extraPubInputs }),
+            callFuncOrTolkGetter(deployed.verifier, withPubInputs(validPayloadArgs, extraPubInputs), VERIFY_GETTER),
         ).rejects.toThrow();
 
-        const missingInputsResult = await verifier.sendVerify(deployer.getSender(), {
-            pi_a,
-            pi_b,
-            pi_c,
-            pubInputs: missingPubInputs,
-            value: toNano('0.15'),
-        });
-
+        const missingInputsResult = await sendFuncOrTolkVerify(
+            deployed,
+            withPubInputs(validPayloadArgs, missingPubInputs),
+            VERIFY_VALUE,
+        );
         expect(missingInputsResult.transactions).toHaveTransaction({
-            from: deployer.address,
-            to: verifier.address,
+            from: deployed.deployer.address,
+            to: deployed.verifier.address,
             success: false,
             exitCode: 258,
         });
 
-        const extraInputsResult = await verifier.sendVerify(deployer.getSender(), {
-            pi_a,
-            pi_b,
-            pi_c,
-            pubInputs: extraPubInputs,
-            value: toNano('0.15'),
-        });
-
+        const extraInputsResult = await sendFuncOrTolkVerify(
+            deployed,
+            withPubInputs(validPayloadArgs, extraPubInputs),
+            VERIFY_VALUE,
+        );
         expect(extraInputsResult.transactions).toHaveTransaction({
-            from: deployer.address,
-            to: verifier.address,
+            from: deployed.deployer.address,
+            to: deployed.verifier.address,
             success: false,
             exitCode: 258,
         });

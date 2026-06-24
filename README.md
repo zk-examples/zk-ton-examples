@@ -18,13 +18,68 @@ For more details, see the [TON documentation on zk-proofs](https://docs.ton.org/
 npm create ton@latest
 
 npm install snarkjs @types/snarkjs
-npm install export-ton-verifier@latest
+npm install export-ton-verifier@^2.4.0
 ```
 
 ## How to use
 
+After circuit artifacts exist, regenerate every verifier contract from the current verification keys:
+
 ```sh
 npm run generate:verifiers
+npx blueprint build --all
+npx jest --runInBand
+```
+
+`npm run generate:verifiers` runs the full `export-ton-verifier` set for Circom/snarkjs, Noname/snarkjs, Gnark snarkjs JSON, Gnark native JSON, Gnark native binary, Arkworks snarkjs JSON and Arkworks native bundle inputs.
+
+## Regenerate all contracts from fresh verification keys
+
+Run this sequence from the repository root when you need new proving/verifying keys. The SnarkJS setup commands, `go run .` and `cargo run` all rewrite proof/key artifacts, so the TON contracts must be regenerated and rebuilt after them.
+
+```sh
+# 1. Circom / snarkjs: Multiplier
+cd circuits/Multiplier
+circom Multiplier.circom --r1cs --wasm --sym --prime bls12381
+snarkjs powersoftau new bls12-381 10 pot10_0000.ptau -v
+snarkjs powersoftau contribute pot10_0000.ptau pot10_0001.ptau --name="First contribution" -v -e="some random text"
+snarkjs powersoftau prepare phase2 pot10_0001.ptau pot10_final.ptau -v
+snarkjs groth16 setup Multiplier.r1cs pot10_final.ptau Multiplier_0000.zkey
+snarkjs zkey contribute Multiplier_0000.zkey Multiplier_final.zkey --name="1st Contributor Name" -v -e="some random text"
+snarkjs zkey export verificationkey Multiplier_final.zkey verification_key.json
+cd ../..
+
+# 2. Noname / snarkjs: Sudoku
+cd circuits/Sudoku
+noname check
+noname run --backend r1cs-bls12-381 --private-inputs '{"solution": { "inner": ["9", "5", "3", "6", "2", "1", "7", "8", "4", "1", "4", "8", "7", "5", "9", "2", "6", "3", "2", "7", "6", "8", "3", "4", "9", "5", "1", "3", "6", "9", "2", "7", "5", "4", "1", "8", "4", "8", "5", "9", "1", "6", "3", "7", "2", "7", "1", "2", "3", "4", "8", "6", "9", "5", "6", "3", "7", "1", "8", "2", "5", "4", "9", "5", "2", "1", "4", "9", "7", "8", "3", "6", "8", "9", "4", "5", "6", "3", "1", "2", "7"] }}' --public-inputs '{"grid": { "inner": ["0", "5", "3", "6", "2", "1", "7", "8", "4", "0", "4", "8", "7", "5", "9", "2", "6", "3", "2", "7", "6", "8", "3", "4", "9", "5", "1", "3", "6", "9", "2", "7", "0", "4", "1", "8", "4", "8", "5", "9", "1", "6", "3", "7", "2", "0", "1", "2", "3", "4", "8", "6", "9", "5", "6", "3", "0", "1", "8", "2", "5", "4", "9", "5", "2", "1", "4", "9", "0", "8", "3", "6", "8", "9", "4", "5", "6", "3", "1", "2", "7"] }}'
+snarkjs powersoftau new bls12-381 14 pot14_0000.ptau -v
+snarkjs powersoftau contribute pot14_0000.ptau pot14_0001.ptau --name="First contribution" -v -e="some random text"
+snarkjs powersoftau prepare phase2 pot14_0001.ptau pot14_final.ptau -v
+snarkjs groth16 setup Sudoku.r1cs pot14_final.ptau Sudoku_0000.zkey
+snarkjs zkey contribute Sudoku_0000.zkey Sudoku_final.zkey --name="1st Contributor Name" -v -e="some random text"
+snarkjs zkey export verificationkey Sudoku_final.zkey verification_key.json
+snarkjs groth16 prove Sudoku_final.zkey Sudoku.wtns proof.json public.json
+snarkjs groth16 verify verification_key.json public.json proof.json
+cd ../..
+
+# 3. Gnark: Cubic snarkjs JSON, native JSON and native binary artifacts
+cd circuits/cubic-gnark
+go mod verify
+go test -count=1 ./...
+go run .
+cd ../..
+
+# 4. Arkworks: snarkjs JSON and native bundle artifacts
+cd circuits/Arkworks/MulCircuit
+cargo test
+cargo run
+cd ../../..
+
+# 5. Regenerate and test every TON verifier contract from the new keys
+npm run generate:verifiers
+npx blueprint build --all
+npx jest --runInBand
 ```
 
 ### Multiplier (circom)
@@ -119,16 +174,28 @@ go get github.com/mysteryon88/gnark-to-snarkjs@latest
 go run main.go
 
 # export Tolk contract
-npx export-ton-verifier ./circuits/cubic-gnark/verification_key.json ./contracts/verifier_cubic.tolk
-npx export-ton-verifier ./circuits/cubic-gnark/verification_key.json ./contracts/verifier_cubic.tolk --contract-name Cubic
+npx export-ton-verifier ./circuits/cubic-gnark/artifacts/verification_key.json ./contracts/verifier_cubic.tolk
+npx export-ton-verifier ./circuits/cubic-gnark/artifacts/verification_key.json ./contracts/verifier_cubic.tolk --contract-name Cubic
 # export FunC contract
-npx export-ton-verifier ./circuits/cubic-gnark/verification_key.json ./contracts/verifier_cubic.fc --func
+npx export-ton-verifier ./circuits/cubic-gnark/artifacts/verification_key.json ./contracts/verifier_cubic.fc --func
 # export Tact contract
-npx export-ton-verifier ./circuits/cubic-gnark/verification_key.json ./contracts/verifier_cubic.tact --tact
+npx export-ton-verifier ./circuits/cubic-gnark/artifacts/verification_key.json ./contracts/verifier_cubic.tact --tact
+
+# export native Gnark JSON contracts
+npx export-ton-verifier ./circuits/cubic-gnark/artifacts/verification_key_gnark.json ./contracts/verifier_cubic_gnark_json.tolk
+npx export-ton-verifier ./circuits/cubic-gnark/artifacts/verification_key_gnark.json ./contracts/verifier_cubic_gnark_json.fc --func
+npx export-ton-verifier ./circuits/cubic-gnark/artifacts/verification_key_gnark.json ./contracts/verifier_cubic_gnark_json.tact --tact
+
+# export native Gnark binary contracts
+npx export-ton-verifier ./circuits/cubic-gnark/artifacts/verification_key.bin ./contracts/verifier_cubic_gnark_bin.tolk
+npx export-ton-verifier ./circuits/cubic-gnark/artifacts/verification_key.bin ./contracts/verifier_cubic_gnark_bin.fc --func
+npx export-ton-verifier ./circuits/cubic-gnark/artifacts/verification_key.bin ./contracts/verifier_cubic_gnark_bin.tact --tact
 
 # testing contracts
 npx blueprint build --all
 npx blueprint test Verifier_cubic_tact
+npx blueprint test Verifier_cubic_gnark_json_tact
+npx blueprint test Verifier_cubic_gnark_bin_tact
 ```
 
 #### Multiplier (Arkworks)
@@ -150,7 +217,13 @@ npx export-ton-verifier ./circuits/Arkworks/MulCircuit/json/verification_key.jso
 # export Tact contract
 npx export-ton-verifier ./circuits/Arkworks/MulCircuit/json/verification_key.json ./contracts/verifier_ark.tact --tact
 
+# export native Arkworks bundle contracts
+npx export-ton-verifier ./circuits/Arkworks/MulCircuit/json/groth16_artifacts.json ./contracts/verifier_arkworks.tolk
+npx export-ton-verifier ./circuits/Arkworks/MulCircuit/json/groth16_artifacts.json ./contracts/verifier_arkworks.fc --func
+npx export-ton-verifier ./circuits/Arkworks/MulCircuit/json/groth16_artifacts.json ./contracts/verifier_arkworks.tact --tact
+
 # testing contracts
 npx blueprint build --all
 npx blueprint test Verifier_ark
+npx blueprint test Verifier_arkworks_tact
 ```

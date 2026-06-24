@@ -28,6 +28,7 @@ package-lock.json
 *.ptau
 *.sym
 *.tgz
+!export-ton-verifier-2.4.0.tgz
 *.wtns
 *.zkey
 *.nope

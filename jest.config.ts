@@ -7,6 +7,7 @@ const config: Config = {
     testEnvironment: '@ton/sandbox/jest-environment',
     testPathIgnorePatterns: ['/node_modules/', '/dist/'],
     reporters: ['default', ['@ton/sandbox/jest-reporter', {}]],
+    testTimeout: 30000,
     forceExit: true,
 };
 

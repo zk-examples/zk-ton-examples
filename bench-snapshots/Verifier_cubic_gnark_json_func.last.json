@@ -1,0 +1,10 @@
+{
+  "gas": {
+    "Deploy": 489,
+    "Verify": 89435
+  },
+  "codeSize": {
+    "Verifier_cubic_gnark_json_func bits": 4471,
+    "Verifier_cubic_gnark_json_func cells": 13
+  }
+}

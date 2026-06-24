@@ -32,9 +32,39 @@
             "mode": "full"
         },
         {
+            "name": "Verifier_cubic_gnark_json_tact",
+            "path": "contracts\\verifier_cubic_gnark_json.tact",
+            "output": "build\\Verifier_cubic_gnark_json_tact",
+            "options": {
+                "debug": false,
+                "external": false
+            },
+            "mode": "full"
+        },
+        {
+            "name": "Verifier_cubic_gnark_bin_tact",
+            "path": "contracts\\verifier_cubic_gnark_bin.tact",
+            "output": "build\\Verifier_cubic_gnark_bin_tact",
+            "options": {
+                "debug": false,
+                "external": false
+            },
+            "mode": "full"
+        },
+        {
             "name": "Verifier_ark_tact",
             "path": "contracts\\verifier_ark.tact",
             "output": "build\\Verifier_ark_tact",
+            "options": {
+                "debug": false,
+                "external": false
+            },
+            "mode": "full"
+        },
+        {
+            "name": "Verifier_arkworks_tact",
+            "path": "contracts\\verifier_arkworks.tact",
+            "output": "build\\Verifier_arkworks_tact",
             "options": {
                 "debug": false,
                 "external": false
