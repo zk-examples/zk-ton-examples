@@ -35,3 +35,5 @@ package-lock.json
 
 *_js
 zkTokenRegistration
+!circuits/Multiplier/Multiplier_final.zkey
+!circuits/Sudoku/Sudoku_final.zkey

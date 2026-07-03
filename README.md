@@ -18,7 +18,7 @@ For more details, see the [TON documentation on zk-proofs](https://docs.ton.org/
 npm create ton@latest
 
 npm install snarkjs @types/snarkjs
-npm install export-ton-verifier@^2.4.0
+npm install export-ton-verifier@latest
 ```
 
 ## How to use
