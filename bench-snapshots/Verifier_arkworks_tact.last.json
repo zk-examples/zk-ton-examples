@@ -1,10 +1,10 @@
 {
   "gas": {
-    "Deploy": 2026,
-    "Verify": 91498
+    "Deploy": 2116,
+    "Verify": 91888
   },
   "codeSize": {
-    "Verifier_arkworks_tact bits": 5874,
-    "Verifier_arkworks_tact cells": 11
+    "Verifier_arkworks_tact bits": 6130,
+    "Verifier_arkworks_tact cells": 13
   }
 }

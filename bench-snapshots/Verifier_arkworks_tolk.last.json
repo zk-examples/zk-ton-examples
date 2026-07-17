@@ -1,10 +1,10 @@
 {
   "gas": {
     "Deploy": 496,
-    "Verify": 88767
+    "Verify": 88993
   },
   "codeSize": {
-    "Verifier_arkworks_tolk bits": 6517,
+    "Verifier_arkworks_tolk bits": 7261,
     "Verifier_arkworks_tolk cells": 13
   }
 }

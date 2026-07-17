@@ -17,13 +17,17 @@ const slice verifier::vk_beta_2  = "b95fccaaea81ba6d5d571dcdbc8d4a07a1da2791bc37
 ;; public input dict settings
 const int verifier::publicInputKeyLen = 32;
 const int verifier::nPublic = 1;
+const int verifier::minVerifyValue = 50000000;
 
 ;; error codes
 const int verifier::err::public_not_present = 257;
+const int verifier::err::scalar_not_in_field = 259;
 const int verifier::err::too_many_publics = 258;
 const int verifier::err::wrong_proof = 260;
+const int verifier::err::not_enough_value = 261;
 
 ;; bls intrinsics
+int bls_r() asm "BLS_PUSHR";
 slice bls_g1_add(slice x, slice y) asm "BLS_G1_ADD";
 slice bls_g1_neg(slice x) asm "BLS_G1_NEG";
 int bls_pairing(slice x1, slice y1, slice x2, slice y2, slice x3, slice y3, slice x4, slice y4, int n) asm "BLS_PAIRING";
@@ -44,6 +48,7 @@ slice bls_g1_multiexp_1(
     (slice input0, int ok0) = pubInputs~udict_delete_get?(verifier::publicInputKeyLen, 0);
     throw_unless(verifier::err::public_not_present, ok0);
     int val0 = input0~load_uint(256);
+    throw_unless(verifier::err::scalar_not_in_field, val0 < bls_r());
 
     ;; ensure the dict is now empty (no extra public inputs beyond 0..nPublic-1)
     throw_unless(verifier::err::too_many_publics, null?(pubInputs));
@@ -86,7 +91,7 @@ slice bls_g1_multiexp_1(
     );
 }
 
-() recv_internal(cell in_msg_full, slice in_msg_body) impure {
+() recv_internal(int msg_value, cell in_msg_full, slice in_msg_body) impure {
     if (in_msg_body.slice_empty?()) {
         return ();
     }
@@ -98,6 +103,7 @@ slice bls_g1_multiexp_1(
     int op = in_msg_body~load_uint(32);
 
     if (op == op::verify) {
+        throw_unless(verifier::err::not_enough_value, msg_value >= verifier::minVerifyValue);
         throw_unless(verifier::err::wrong_proof, verifyProof(in_msg_body));
         return ();
     }

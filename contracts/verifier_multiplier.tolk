@@ -18,9 +18,12 @@ struct MultiplierVerifier {
   nPublic: int
 }
 
+const MultiplierVerifierMinVerifyValue: coins = 50000000
+
 enum MultiplierVerifierErrors {
   InvalidInputs = 258,
   WrongProof = 260,
+  NotEnoughValue = 261,
 }
 
 fun MultiplierVerifier.create(): MultiplierVerifier {
@@ -44,6 +47,15 @@ fun MultiplierVerifier.create(): MultiplierVerifier {
 /// Expects the slice to contain a canonically encoded BLS12-381 G1 point
 /// accepted by the TVM `BLS_G1_NEG` opcode.
 @pure fun MultiplierVerifier.blsG1Neg(x: slice): slice asm "BLS_G1_NEG";
+
+@pure fun MultiplierVerifier.blsR(): int asm "BLS_PUSHR";
+
+fun MultiplierVerifier.checkPublicInput(x: int): int {
+  if (x < 0 || x >= MultiplierVerifier.blsR()) {
+    throw MultiplierVerifierErrors.InvalidInputs;
+  }
+  return x;
+}
 
 /// # Safety
 /// Expects the provided slices to contain canonically encoded BLS12-381 proof
@@ -75,7 +87,7 @@ fun MultiplierVerifier.loadNextPubInput(mutate payload: slice): int {
     }
     payload = payload.loadRef().beginParse();
   }
-  return payload.loadInt(257);
+  return MultiplierVerifier.checkPublicInput(payload.loadInt(257));
 }
 
 fun MultiplierVerifier.finishGroth16(
@@ -140,7 +152,7 @@ fun MultiplierVerifier.verify(self, piA: slice, piB: slice, piC: slice, pubInput
   var acc: slice = self.ic0; // placeholder until haveAcc == true
 
   acc = MultiplierVerifier.blsG1Multiexp1(
-    self.ic1, pubInputs.get(0)
+    self.ic1, MultiplierVerifier.checkPublicInput(pubInputs.get(0))
     , 1
   );
   haveAcc = true;
@@ -178,6 +190,7 @@ fun onInternalMessage(inMsg: InMessage) {
 
   match (msg) {
     MultiplierVerifierVerify => {
+      assert (inMsg.valueCoins >= MultiplierVerifierMinVerifyValue) throw MultiplierVerifierErrors.NotEnoughValue;
       assert (MultiplierVerifier.create().verifyProof(msg)) throw MultiplierVerifierErrors.WrongProof;
     }
     else => {

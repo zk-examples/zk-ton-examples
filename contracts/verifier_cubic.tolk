@@ -18,9 +18,12 @@ struct Cubic {
   nPublic: int
 }
 
+const CubicMinVerifyValue: coins = 50000000
+
 enum CubicErrors {
   InvalidInputs = 258,
   WrongProof = 260,
+  NotEnoughValue = 261,
 }
 
 fun Cubic.create(): Cubic {
@@ -44,6 +47,15 @@ fun Cubic.create(): Cubic {
 /// Expects the slice to contain a canonically encoded BLS12-381 G1 point
 /// accepted by the TVM `BLS_G1_NEG` opcode.
 @pure fun Cubic.blsG1Neg(x: slice): slice asm "BLS_G1_NEG";
+
+@pure fun Cubic.blsR(): int asm "BLS_PUSHR";
+
+fun Cubic.checkPublicInput(x: int): int {
+  if (x < 0 || x >= Cubic.blsR()) {
+    throw CubicErrors.InvalidInputs;
+  }
+  return x;
+}
 
 /// # Safety
 /// Expects the provided slices to contain canonically encoded BLS12-381 proof
@@ -75,7 +87,7 @@ fun Cubic.loadNextPubInput(mutate payload: slice): int {
     }
     payload = payload.loadRef().beginParse();
   }
-  return payload.loadInt(257);
+  return Cubic.checkPublicInput(payload.loadInt(257));
 }
 
 fun Cubic.finishGroth16(
@@ -140,7 +152,7 @@ fun Cubic.verify(self, piA: slice, piB: slice, piC: slice, pubInputs: array<int>
   var acc: slice = self.ic0; // placeholder until haveAcc == true
 
   acc = Cubic.blsG1Multiexp1(
-    self.ic1, pubInputs.get(0)
+    self.ic1, Cubic.checkPublicInput(pubInputs.get(0))
     , 1
   );
   haveAcc = true;
@@ -178,6 +190,7 @@ fun onInternalMessage(inMsg: InMessage) {
 
   match (msg) {
     CubicVerify => {
+      assert (inMsg.valueCoins >= CubicMinVerifyValue) throw CubicErrors.NotEnoughValue;
       assert (Cubic.create().verifyProof(msg)) throw CubicErrors.WrongProof;
     }
     else => {

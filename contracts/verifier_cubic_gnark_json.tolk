@@ -19,9 +19,12 @@ const VK_BETA_2:  slice = "a1134ed31cf09f0520c5d817b4a319ab7af4bc3035c8b40d8d1fb
 
 const N_PUBLIC: int = 1
 
+const MIN_VERIFY_VALUE: coins = 50000000
+
 enum VerifierErrors {
   InvalidInputs = 258,
   WrongProof = 260,
+  NotEnoughValue = 261,
 }
 
 
@@ -34,6 +37,15 @@ enum VerifierErrors {
 /// Expects the slice to contain a canonically encoded BLS12-381 G1 point
 /// accepted by the TVM `BLS_G1_NEG` opcode.
 @pure fun blsG1Neg(x: slice): slice asm "BLS_G1_NEG";
+
+@pure fun blsR(): int asm "BLS_PUSHR";
+
+fun checkPublicInput(x: int): int {
+  if (x < 0 || x >= blsR()) {
+    throw VerifierErrors.InvalidInputs;
+  }
+  return x;
+}
 
 /// # Safety
 /// Expects the provided slices to contain canonically encoded BLS12-381 proof
@@ -65,7 +77,7 @@ fun loadNextPubInput(mutate payload: slice): int {
     }
     payload = payload.loadRef().beginParse();
   }
-  return payload.loadInt(257);
+  return checkPublicInput(payload.loadInt(257));
 }
 
 fun finishGroth16(
@@ -128,7 +140,7 @@ fun groth16VerifyArray(piA: slice, piB: slice, piC: slice, pubInputs: array<int>
   var acc: slice = IC0; // placeholder until haveAcc == true
 
   acc = blsG1Multiexp1(
-    IC1, pubInputs.get(0)
+    IC1, checkPublicInput(pubInputs.get(0))
     , 1
   );
   haveAcc = true;
@@ -164,6 +176,7 @@ fun onInternalMessage(inMsg: InMessage) {
 
   match (msg) {
     Verify => {
+      assert (inMsg.valueCoins >= MIN_VERIFY_VALUE) throw VerifierErrors.NotEnoughValue;
       assert (verifyProof(msg)) throw VerifierErrors.WrongProof;
     }
     else => {

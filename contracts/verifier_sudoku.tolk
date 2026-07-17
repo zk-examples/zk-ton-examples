@@ -18,10 +18,13 @@ const VK_BETA_2:  slice = "b1ca50a8f15114069787390fc54a4da790aea5755a4ec885bae0e
 
 const N_PUBLIC: int = 81
 
+const MIN_VERIFY_VALUE: coins = 50000000
+
 enum VerifierErrors {
   InvalidInputs = 258,
   IndexOutOfRange = 259,
   WrongProof = 260,
+  NotEnoughValue = 261,
 }
 
 
@@ -34,6 +37,15 @@ enum VerifierErrors {
 /// Expects the slice to contain a canonically encoded BLS12-381 G1 point
 /// accepted by the TVM `BLS_G1_NEG` opcode.
 @pure fun blsG1Neg(x: slice): slice asm "BLS_G1_NEG";
+
+@pure fun blsR(): int asm "BLS_PUSHR";
+
+fun checkPublicInput(x: int): int {
+  if (x < 0 || x >= blsR()) {
+    throw VerifierErrors.InvalidInputs;
+  }
+  return x;
+}
 
 /// # Safety
 /// Expects the provided slices to contain canonically encoded BLS12-381 proof
@@ -168,7 +180,7 @@ fun loadNextPubInput(mutate payload: slice): int {
     }
     payload = payload.loadRef().beginParse();
   }
-  return payload.loadInt(257);
+  return checkPublicInput(payload.loadInt(257));
 }
 
 fun finishGroth16(
@@ -287,13 +299,13 @@ fun groth16VerifyArray(piA: slice, piB: slice, piC: slice, pubInputs: array<int>
 
   while (done < full * 7) {
     val tmp: slice = blsG1Multiexp7(
-      ic(done + 1), pubInputs.get(done),
-      ic(done + 2), pubInputs.get(done + 1),
-      ic(done + 3), pubInputs.get(done + 2),
-      ic(done + 4), pubInputs.get(done + 3),
-      ic(done + 5), pubInputs.get(done + 4),
-      ic(done + 6), pubInputs.get(done + 5),
-      ic(done + 7), pubInputs.get(done + 6)
+      ic(done + 1), checkPublicInput(pubInputs.get(done)),
+      ic(done + 2), checkPublicInput(pubInputs.get(done + 1)),
+      ic(done + 3), checkPublicInput(pubInputs.get(done + 2)),
+      ic(done + 4), checkPublicInput(pubInputs.get(done + 3)),
+      ic(done + 5), checkPublicInput(pubInputs.get(done + 4)),
+      ic(done + 6), checkPublicInput(pubInputs.get(done + 5)),
+      ic(done + 7), checkPublicInput(pubInputs.get(done + 6))
       , 7
     );
 
@@ -309,10 +321,10 @@ fun groth16VerifyArray(piA: slice, piB: slice, piC: slice, pubInputs: array<int>
 
   if (rem == 4) {
     val tail: slice = blsG1Multiexp4(
-      ic(done + 1), pubInputs.get(done),
-      ic(done + 2), pubInputs.get(done + 1),
-      ic(done + 3), pubInputs.get(done + 2),
-      ic(done + 4), pubInputs.get(done + 3)
+      ic(done + 1), checkPublicInput(pubInputs.get(done)),
+      ic(done + 2), checkPublicInput(pubInputs.get(done + 1)),
+      ic(done + 3), checkPublicInput(pubInputs.get(done + 2)),
+      ic(done + 4), checkPublicInput(pubInputs.get(done + 3))
       , 4
     );
 
@@ -357,6 +369,7 @@ fun onInternalMessage(inMsg: InMessage) {
 
   match (msg) {
     Verify => {
+      assert (inMsg.valueCoins >= MIN_VERIFY_VALUE) throw VerifierErrors.NotEnoughValue;
       assert (verifyProof(msg)) throw VerifierErrors.WrongProof;
     }
     else => {

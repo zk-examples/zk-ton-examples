@@ -18,9 +18,12 @@ struct ArkVerifier {
   nPublic: int
 }
 
+const ArkVerifierMinVerifyValue: coins = 50000000
+
 enum ArkVerifierErrors {
   InvalidInputs = 258,
   WrongProof = 260,
+  NotEnoughValue = 261,
 }
 
 fun ArkVerifier.create(): ArkVerifier {
@@ -44,6 +47,15 @@ fun ArkVerifier.create(): ArkVerifier {
 /// Expects the slice to contain a canonically encoded BLS12-381 G1 point
 /// accepted by the TVM `BLS_G1_NEG` opcode.
 @pure fun ArkVerifier.blsG1Neg(x: slice): slice asm "BLS_G1_NEG";
+
+@pure fun ArkVerifier.blsR(): int asm "BLS_PUSHR";
+
+fun ArkVerifier.checkPublicInput(x: int): int {
+  if (x < 0 || x >= ArkVerifier.blsR()) {
+    throw ArkVerifierErrors.InvalidInputs;
+  }
+  return x;
+}
 
 /// # Safety
 /// Expects the provided slices to contain canonically encoded BLS12-381 proof
@@ -75,7 +87,7 @@ fun ArkVerifier.loadNextPubInput(mutate payload: slice): int {
     }
     payload = payload.loadRef().beginParse();
   }
-  return payload.loadInt(257);
+  return ArkVerifier.checkPublicInput(payload.loadInt(257));
 }
 
 fun ArkVerifier.finishGroth16(
@@ -140,7 +152,7 @@ fun ArkVerifier.verify(self, piA: slice, piB: slice, piC: slice, pubInputs: arra
   var acc: slice = self.ic0; // placeholder until haveAcc == true
 
   acc = ArkVerifier.blsG1Multiexp1(
-    self.ic1, pubInputs.get(0)
+    self.ic1, ArkVerifier.checkPublicInput(pubInputs.get(0))
     , 1
   );
   haveAcc = true;
@@ -178,6 +190,7 @@ fun onInternalMessage(inMsg: InMessage) {
 
   match (msg) {
     ArkVerifierVerify => {
+      assert (inMsg.valueCoins >= ArkVerifierMinVerifyValue) throw ArkVerifierErrors.NotEnoughValue;
       assert (ArkVerifier.create().verifyProof(msg)) throw ArkVerifierErrors.WrongProof;
     }
     else => {

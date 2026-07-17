@@ -28,8 +28,13 @@ const IC1: Slice = rawSlice("b66fc49d7e6b61d7f5cad2d08863d90f3e78680fb5b7b8e8b6b
 // Error codes
 const ERR_PUBLIC_NOT_PRESENT: Int = 257;
 const ERR_TOO_MANY_PUBLICS: Int = 258;
+const ERR_SCALAR_NOT_IN_FIELD: Int = 259;
 const ERR_WRONG_PROOF: Int = 260;
+const ERR_NOT_ENOUGH_VALUE: Int = 261;
+const MIN_VERIFY_VALUE: Int = 50000000;
 
+
+asm fun blsR(): Int { BLS_PUSHR }
 
 fun assertNoExtraPubInputs(pubInputs: map<Int as uint32, Int>) {
   foreach (key, _ in pubInputs) {
@@ -43,7 +48,9 @@ fun getPub(pubInputs: map<Int as uint32, Int>, k: Int): Int {
   if (v == null) {
     nativeThrow(ERR_PUBLIC_NOT_PRESENT);
   }
-  return v!!;
+  let value = v!!;
+  nativeThrowUnless(ERR_SCALAR_NOT_IN_FIELD, value >= 0 && value < blsR());
+  return value;
 }
 
 // Message definition
@@ -57,6 +64,7 @@ message (0x3b3cca17) Verify {
 contract Verifier {
 
   receive(msg: Verify) {
+    nativeThrowUnless(ERR_NOT_ENOUGH_VALUE, context().value >= MIN_VERIFY_VALUE);
     let res = self.groth16Verify(msg.piA, msg.piB, msg.piC, msg.pubInputs);
     nativeThrowUnless(ERR_WRONG_PROOF, res);
   }
