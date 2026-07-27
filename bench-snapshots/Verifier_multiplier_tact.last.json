@@ -1,10 +1,10 @@
 {
   "gas": {
-    "Deploy": 2116,
-    "Verify": 91888
+    "Deploy": 1926,
+    "Verify": 105591
   },
   "codeSize": {
-    "Verifier_multiplier_tact bits": 6130,
-    "Verifier_multiplier_tact cells": 13
+    "Verifier_multiplier_tact bits": 7650,
+    "Verifier_multiplier_tact cells": 15
   }
 }

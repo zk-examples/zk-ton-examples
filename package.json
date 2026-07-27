@@ -7,22 +7,21 @@
         "start": "blueprint run",
         "build": "blueprint build",
         "test": "jest --verbose",
-        "generate:verifiers": "ts-node scripts/regenerate-verifiers.ts",
-        "release": "blueprint pack && npm publish --access public"
+        "generate:verifiers": "ts-node scripts/regenerate-verifiers.ts"
     },
     "dependencies": {
         "@ton/convert-func-to-tolk": "^1.0.0",
         "@ton/core": "~0",
         "@types/snarkjs": "^0.7.9",
-        "export-ton-verifier": "^3.0.0",
+        "export-ton-verifier": "^3.0.1",
         "snarkjs": "^0.7.6"
     },
     "devDependencies": {
         "@tact-lang/compiler": ">=1.6.13 <2.0.0",
         "@ton-community/func-js": ">=0.11.0",
-        "@ton/blueprint": ">=0.44.2",
+        "@ton/blueprint": ">=0.45.0",
         "@ton/crypto": "^3.3.0",
-        "@ton/sandbox": ">=0.43.0",
+        "@ton/sandbox": ">=0.44.0",
         "@ton/test-utils": ">=0.12.0",
         "@ton/tolk-js": ">=1.4.2",
         "@ton/ton": "^16.3.0",
@@ -30,7 +29,7 @@
         "@types/mocha": "^10.0.10",
         "@types/node": "^25.9.4",
         "jest": "^30.4.2",
-        "prettier": "^3.8.4",
+        "prettier": "^3.9.6",
         "ts-jest": "^29.4.11",
         "ts-node": "^10.9.2",
         "typescript": "^5.9.3"

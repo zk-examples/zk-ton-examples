@@ -110,8 +110,8 @@ npx export-ton-verifier ./circuits/Multiplier/Multiplier_final.zkey ./contracts/
 npx export-ton-verifier ./circuits/Multiplier/Multiplier_final.zkey ./contracts/verifier_multiplier.tact --tact
 
 # Only copy the TypeScript wrapper
-npx export-ton-verifier import-wrapper ./wrappers/Verifier_tolk.ts --groth16
-npx export-ton-verifier import-wrapper ./wrappers/Verifier_func.ts --groth16 --func
+npx export-ton-verifier import-wrapper ./wrappers/Verifier_tolk.ts --groth16 --force
+npx export-ton-verifier import-wrapper ./wrappers/Verifier_func.ts --groth16 --func --force
 ```
 
 ### Sudoku (noname)

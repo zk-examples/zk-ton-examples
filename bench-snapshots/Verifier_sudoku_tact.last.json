@@ -1,10 +1,10 @@
 {
   "gas": {
-    "Deploy": 2116,
-    "Verify": 938113
+    "Deploy": 1926,
+    "Verify": 951926
   },
   "codeSize": {
-    "Verifier_sudoku_tact bits": 45042,
-    "Verifier_sudoku_tact cells": 86
+    "Verifier_sudoku_tact bits": 46562,
+    "Verifier_sudoku_tact cells": 89
   }
 }

@@ -169,9 +169,9 @@ export async function runTactVerifierTest(opts: {
         },
         {
             $$type: 'Verify',
-            piA: beginCell().storeBuffer(opts.payload.pi_a).endCell().asSlice(),
-            piB: beginCell().storeBuffer(opts.payload.pi_b).endCell().asSlice(),
-            piC: beginCell().storeBuffer(opts.payload.pi_c).endCell().asSlice(),
+            piA: beginCell().storeBuffer(opts.payload.pi_a).endCell(),
+            piB: beginCell().storeBuffer(opts.payload.pi_b).endCell(),
+            piC: beginCell().storeBuffer(opts.payload.pi_c).endCell(),
             pubInputs: pubInputsDict,
         },
     );

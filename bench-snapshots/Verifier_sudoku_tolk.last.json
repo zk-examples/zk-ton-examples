@@ -1,10 +1,10 @@
 {
   "gas": {
-    "Deploy": 696,
-    "Verify": 895945
+    "Deploy": 796,
+    "Verify": 938623
   },
   "codeSize": {
-    "Verifier_sudoku_tolk bits": 47337,
-    "Verifier_sudoku_tolk cells": 80
+    "Verifier_sudoku_tolk bits": 51136,
+    "Verifier_sudoku_tolk cells": 91
   }
 }

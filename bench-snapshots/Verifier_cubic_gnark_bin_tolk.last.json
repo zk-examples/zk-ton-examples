@@ -1,10 +1,10 @@
 {
   "gas": {
-    "Deploy": 496,
-    "Verify": 88993
+    "Deploy": 596,
+    "Verify": 104594
   },
   "codeSize": {
-    "Verifier_cubic_gnark_bin_tolk bits": 7261,
-    "Verifier_cubic_gnark_bin_tolk cells": 13
+    "Verifier_cubic_gnark_bin_tolk bits": 9945,
+    "Verifier_cubic_gnark_bin_tolk cells": 21
   }
 }

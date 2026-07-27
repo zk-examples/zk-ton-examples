@@ -1,10 +1,10 @@
 {
   "gas": {
-    "Deploy": 2116,
-    "Verify": 91888
+    "Deploy": 1926,
+    "Verify": 105591
   },
   "codeSize": {
-    "Verifier_cubic_gnark_json_tact bits": 6130,
-    "Verifier_cubic_gnark_json_tact cells": 13
+    "Verifier_cubic_gnark_json_tact bits": 7650,
+    "Verifier_cubic_gnark_json_tact cells": 15
   }
 }
