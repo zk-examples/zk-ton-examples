@@ -35,8 +35,8 @@ func (circuit *CubicCircuit) Define(api frontend.API) error {
 	return nil
 }
 
-func artifactPath(name string) string {
-	return filepath.Join(artifactsDir, name)
+func artifactPath(directory, name string) string {
+	return filepath.Join(directory, name)
 }
 
 func publicSignals(w witness.Witness) ([]string, error) {
@@ -90,46 +90,84 @@ func must(err error) {
 	}
 }
 
-func main() {
-	must(os.MkdirAll(artifactsDir, 0o755))
+func generateArtifacts(outputDirectory string, assignment CubicCircuit) error {
+	if err := os.MkdirAll(outputDirectory, 0o755); err != nil {
+		return fmt.Errorf("create artifact directory: %w", err)
+	}
 
-	// compiles our circuit into a R1CS
 	var circuit CubicCircuit
-	ccs, _ := frontend.Compile(ecc.BLS12_381.ScalarField(), r1cs.NewBuilder, &circuit)
+	ccs, err := frontend.Compile(ecc.BLS12_381.ScalarField(), r1cs.NewBuilder, &circuit)
+	if err != nil {
+		return fmt.Errorf("compile circuit: %w", err)
+	}
 
-	// groth16 zkSNARK: Setup
-	pk, vk, _ := groth16.Setup(ccs)
+	pk, vk, err := groth16.Setup(ccs)
+	if err != nil {
+		return fmt.Errorf("setup Groth16: %w", err)
+	}
 
-	// witness definition
-	assignment := CubicCircuit{X: 3, Y: 35}
-	witness, _ := frontend.NewWitness(&assignment, ecc.BLS12_381.ScalarField())
-	publicWitness, _ := witness.Public()
+	fullWitness, err := frontend.NewWitness(&assignment, ecc.BLS12_381.ScalarField())
+	if err != nil {
+		return fmt.Errorf("build witness: %w", err)
+	}
+	publicWitness, err := fullWitness.Public()
+	if err != nil {
+		return fmt.Errorf("build public witness: %w", err)
+	}
 
-	// groth16: Prove & Verify
-	proof, _ := groth16.Prove(ccs, pk, witness)
-	groth16.Verify(proof, vk, publicWitness)
+	proof, err := groth16.Prove(ccs, pk, fullWitness)
+	if err != nil {
+		return fmt.Errorf("prove Groth16: %w", err)
+	}
+	if err := groth16.Verify(proof, vk, publicWitness); err != nil {
+		return fmt.Errorf("verify fresh Groth16 proof: %w", err)
+	}
 
-	publicSignals, _ := publicSignals(publicWitness)
+	signals, err := publicSignals(publicWitness)
+	if err != nil {
+		return err
+	}
 
-	// Export the proof
 	{
-		proof_out, err := os.Create(artifactPath("proof.json"))
-		must(err)
+		proof_out, err := os.Create(artifactPath(outputDirectory, "proof.json"))
+		if err != nil {
+			return fmt.Errorf("create snarkjs proof: %w", err)
+		}
 		defer proof_out.Close()
-		must(gnarktosnarkjs.ExportProof(proof, publicSignals, proof_out))
+		if err := gnarktosnarkjs.ExportProof(proof, signals, proof_out); err != nil {
+			return fmt.Errorf("export snarkjs proof: %w", err)
+		}
 	}
 
-	// Export the verification key
 	{
-		out, err := os.Create(artifactPath("verification_key.json"))
-		must(err)
+		out, err := os.Create(artifactPath(outputDirectory, "verification_key.json"))
+		if err != nil {
+			return fmt.Errorf("create snarkjs verification key: %w", err)
+		}
 		defer out.Close()
-		must(gnarktosnarkjs.ExportVerifyingKey(vk, out))
+		if err := gnarktosnarkjs.ExportVerifyingKey(vk, out); err != nil {
+			return fmt.Errorf("export snarkjs verification key: %w", err)
+		}
 	}
 
-	must(writeJSON(artifactPath("verification_key_gnark.json"), vk))
-	must(writeJSON(artifactPath("proof_gnark.json"), proof))
-	must(writeJSON(artifactPath("public.json"), publicSignals))
-	must(writeBinary(artifactPath("verification_key.bin"), vk))
-	must(writeBinary(artifactPath("proof.bin"), proof))
+	if err := writeJSON(artifactPath(outputDirectory, "verification_key_gnark.json"), vk); err != nil {
+		return err
+	}
+	if err := writeJSON(artifactPath(outputDirectory, "proof_gnark.json"), proof); err != nil {
+		return err
+	}
+	if err := writeJSON(artifactPath(outputDirectory, "public.json"), signals); err != nil {
+		return err
+	}
+	if err := writeBinary(artifactPath(outputDirectory, "verification_key.bin"), vk); err != nil {
+		return err
+	}
+	if err := writeBinary(artifactPath(outputDirectory, "proof.bin"), proof); err != nil {
+		return err
+	}
+	return nil
+}
+
+func main() {
+	must(generateArtifacts(artifactsDir, CubicCircuit{X: 3, Y: 35}))
 }

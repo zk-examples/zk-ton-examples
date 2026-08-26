@@ -22,18 +22,25 @@ Session.vim
 .emacs/
 .helix/
 
-package-lock.json
+.cache/
 
 *.r1cs
 *.ptau
 *.sym
 *.tgz
-!export-ton-verifier-2.4.0.tgz
+!export-ton-verifier-3.0.3.tgz
 *.wtns
 *.zkey
 *.nope
 
 *_js
+!circuits/Multiplier/Multiplier_js/
+circuits/Multiplier/Multiplier_js/*
+!circuits/Multiplier/Multiplier_js/Multiplier.wasm
 zkTokenRegistration
 !circuits/Multiplier/Multiplier_final.zkey
 !circuits/Sudoku/Sudoku_final.zkey
+!circuits/bls12-381-pot14-final.ptau
+!circuits/Multiplier/Multiplier.r1cs
+!circuits/Multiplier/Multiplier.sym
+!circuits/Sudoku/Sudoku.r1cs

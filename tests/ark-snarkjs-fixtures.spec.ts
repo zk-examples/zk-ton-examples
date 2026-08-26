@@ -7,15 +7,21 @@ async function expectArkSnarkjsFixtureVerifies(verificationKeyPath: string, proo
     const proofFile = require(proofPath) as ProofFile;
     const publicSignals = publicSignalsFrom(proofFile, proofName);
 
+    expect(verificationKey.nPublic).toBe(1);
+    expect(verificationKey.IC).toHaveLength(2);
+    expect(proofFile.publicSignals).toEqual(publicSignals);
     expect(await snarkjs.groth16.verify(verificationKey, publicSignals, proofFile)).toBe(true);
+
+    const invalidSignals = [(BigInt(publicSignals[0]) + 1n).toString()];
+    expect(await snarkjs.groth16.verify(verificationKey, invalidSignals, proofFile)).toBe(false);
 }
 
 describe('ark-snarkjs fixtures', () => {
     it.each([
         {
             name: 'mimc BN254',
-            verificationKeyPath: '../circuits/Arkworks/json/mimc/BN254/verification_key.json',
-            proofPath: '../circuits/Arkworks/json/mimc/BN254/proof.json',
+            verificationKeyPath: '../circuits/Arkworks/json/mimc/Bn254/verification_key.json',
+            proofPath: '../circuits/Arkworks/json/mimc/Bn254/proof.json',
         },
         {
             name: 'mimc Bls12-381',
@@ -24,8 +30,8 @@ describe('ark-snarkjs fixtures', () => {
         },
         {
             name: 'mul BN254',
-            verificationKeyPath: '../circuits/Arkworks/json/mul/BN254/verification_key.json',
-            proofPath: '../circuits/Arkworks/json/mul/BN254/proof.json',
+            verificationKeyPath: '../circuits/Arkworks/json/mul/Bn254/verification_key.json',
+            proofPath: '../circuits/Arkworks/json/mul/Bn254/proof.json',
         },
         {
             name: 'mul Bls12-381',

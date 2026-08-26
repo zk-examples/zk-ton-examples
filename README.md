@@ -23,63 +23,30 @@ npm install export-ton-verifier@latest
 
 ## How to use
 
-After circuit artifacts exist, regenerate every verifier contract from the current verification keys:
+All required circuit artifacts and generated verifier sources are checked in. The normal setup is:
 
 ```sh
-npm run generate:verifiers
+npm ci
+npm run fixtures:verify
 npx blueprint build --all
-npx jest --runInBand
+npm test
 ```
 
-`npm run generate:verifiers` runs the full `export-ton-verifier` set for Circom/snarkjs, Noname/snarkjs, Gnark snarkjs JSON, Gnark native JSON, Gnark native binary, Arkworks snarkjs JSON and Arkworks native bundle inputs.
+The generated verifier sources are checked in, so the normal workflow does not regenerate them. Run `npm run generate:verifiers` explicitly when validating or updating the generated contracts; it covers Circom/snarkjs, Noname/snarkjs, Gnark snarkjs JSON, Gnark native JSON, Gnark native binary, Arkworks snarkjs JSON and Arkworks native bundle inputs without rebuilding circuit artifacts.
 
-## Regenerate all contracts from fresh verification keys
+Normal setup verifies `circuits/fixtures-manifest.json` and every real proof with snarkjs. It does not invoke Circom, Noname, Go, Rust, trusted setup, or proving. Node 24.16.0, npm 11.13.0, Rust 1.97.1 for Arkworks, and Rust 1.79.0 for the pinned Noname R1CS compiler are pinned by repository files and installer scripts.
 
-Run this sequence from the repository root when you need new proving/verifying keys. The SnarkJS setup commands, `go run .` and `cargo run` all rewrite proof/key artifacts, so the TON contracts must be regenerated and rebuilt after them.
+## Rebuild every circuit, verification key, and proof
+
+The complete workflow is scripted. It compiles the Circom and Noname circuits, creates a development BLS12-381 Powers of Tau transcript with fresh operating-system CSPRNG entropy when it is absent, rebuilds Groth16 keys and proofs, regenerates all Gnark and Arkworks formats, verifies every proof, and records SHA-256 hashes.
 
 ```sh
-# 1. Circom / snarkjs: Multiplier
-cd circuits/Multiplier
-circom Multiplier.circom --r1cs --wasm --sym --prime bls12381
-snarkjs powersoftau new bls12-381 10 pot10_0000.ptau -v
-snarkjs powersoftau contribute pot10_0000.ptau pot10_0001.ptau --name="First contribution" -v -e="some random text"
-snarkjs powersoftau prepare phase2 pot10_0001.ptau pot10_final.ptau -v
-snarkjs groth16 setup Multiplier.r1cs pot10_final.ptau Multiplier_0000.zkey
-snarkjs zkey contribute Multiplier_0000.zkey Multiplier_final.zkey --name="1st Contributor Name" -v -e="some random text"
-snarkjs zkey export verificationkey Multiplier_final.zkey verification_key.json
-cd ../..
-
-# 2. Noname / snarkjs: Sudoku
-cd circuits/Sudoku
-noname check
-noname run --backend r1cs-bls12-381 --private-inputs '{"solution": { "inner": ["9", "5", "3", "6", "2", "1", "7", "8", "4", "1", "4", "8", "7", "5", "9", "2", "6", "3", "2", "7", "6", "8", "3", "4", "9", "5", "1", "3", "6", "9", "2", "7", "5", "4", "1", "8", "4", "8", "5", "9", "1", "6", "3", "7", "2", "7", "1", "2", "3", "4", "8", "6", "9", "5", "6", "3", "7", "1", "8", "2", "5", "4", "9", "5", "2", "1", "4", "9", "7", "8", "3", "6", "8", "9", "4", "5", "6", "3", "1", "2", "7"] }}' --public-inputs '{"grid": { "inner": ["0", "5", "3", "6", "2", "1", "7", "8", "4", "0", "4", "8", "7", "5", "9", "2", "6", "3", "2", "7", "6", "8", "3", "4", "9", "5", "1", "3", "6", "9", "2", "7", "0", "4", "1", "8", "4", "8", "5", "9", "1", "6", "3", "7", "2", "0", "1", "2", "3", "4", "8", "6", "9", "5", "6", "3", "0", "1", "8", "2", "5", "4", "9", "5", "2", "1", "4", "9", "0", "8", "3", "6", "8", "9", "4", "5", "6", "3", "1", "2", "7"] }}'
-snarkjs powersoftau new bls12-381 14 pot14_0000.ptau -v
-snarkjs powersoftau contribute pot14_0000.ptau pot14_0001.ptau --name="First contribution" -v -e="some random text"
-snarkjs powersoftau prepare phase2 pot14_0001.ptau pot14_final.ptau -v
-snarkjs groth16 setup Sudoku.r1cs pot14_final.ptau Sudoku_0000.zkey
-snarkjs zkey contribute Sudoku_0000.zkey Sudoku_final.zkey --name="1st Contributor Name" -v -e="some random text"
-snarkjs zkey export verificationkey Sudoku_final.zkey verification_key.json
-snarkjs groth16 prove Sudoku_final.zkey Sudoku.wtns proof.json public.json
-snarkjs groth16 verify verification_key.json public.json proof.json
-cd ../..
-
-# 3. Gnark: Cubic snarkjs JSON, native JSON and native binary artifacts
-cd circuits/cubic-gnark
-go mod verify
-go test -count=1 ./...
-go run .
-cd ../..
-
-# 4. Arkworks: snarkjs JSON and native bundle artifacts
-cd circuits/Arkworks/MulCircuit
-cargo test
-cargo run
-cd ../../..
-
-# 5. Regenerate and test every TON verifier contract from the new keys
+npm ci
+npm run noname:install
+npm run fixtures:build
 npm run generate:verifiers
 npx blueprint build --all
-npx jest --runInBand
+npm test
 ```
 
 ### Multiplier (circom)
@@ -88,17 +55,7 @@ npx jest --runInBand
 mkdir circuits/Multiplier
 cd circuits/Multiplier
 
-# compile circuit
-circom Multiplier.circom --r1cs --wasm --sym --prime bls12381
-
-# trusted setup
-snarkjs powersoftau new bls12-381 10 pot10_0000.ptau -v
-snarkjs powersoftau contribute pot10_0000.ptau pot10_0001.ptau --name="First contribution" -v -e="some random text"
-snarkjs powersoftau prepare phase2 pot10_0001.ptau pot10_final.ptau -v
-snarkjs groth16 setup Multiplier.r1cs pot10_final.ptau Multiplier_0000.zkey
-snarkjs zkey contribute Multiplier_0000.zkey Multiplier_final.zkey --name="1st Contributor Name" -v -e="some random text"
-snarkjs zkey export verificationkey Multiplier_final.zkey verification_key.json
-
+# The full circuit/key/proof rebuild is `npm run fixtures:build` from the repository root.
 cd ../..
 
 # export Tolk contract
@@ -119,22 +76,8 @@ npx export-ton-verifier import-wrapper ./wrappers/Verifier_func.ts --groth16 --f
 - [Article about integration with SnarkJS](https://blog.zksecurity.xyz/posts/noname-r1cs/)
 
 ```sh
-noname check
-
-noname run --backend r1cs-bls12-381 --private-inputs '{"solution": { "inner": ["9", "5", "3", "6", "2", "1", "7", "8", "4", "1", "4", "8", "7", "5", "9", "2", "6", "3", "2", "7", "6", "8", "3", "4", "9", "5", "1", "3", "6", "9", "2", "7", "5", "4", "1", "8", "4", "8", "5", "9", "1", "6", "3", "7", "2", "7", "1", "2", "3", "4", "8", "6", "9", "5", "6", "3", "7", "1", "8", "2", "5", "4", "9", "5", "2", "1", "4", "9", "7", "8", "3", "6", "8", "9", "4", "5", "6", "3", "1", "2", "7"] }}' --public-inputs '{"grid": { "inner": ["0", "5", "3", "6", "2", "1", "7", "8", "4", "0", "4", "8", "7", "5", "9", "2", "6", "3", "2", "7", "6", "8", "3", "4", "9", "5", "1", "3", "6", "9", "2", "7", "0", "4", "1", "8", "4", "8", "5", "9", "1", "6", "3", "7", "2", "0", "1", "2", "3", "4", "8", "6", "9", "5", "6", "3", "0", "1", "8", "2", "5", "4", "9", "5", "2", "1", "4", "9", "0", "8", "3", "6", "8", "9", "4", "5", "6", "3", "1", "2", "7"] }}'
-
-# trusted setup
-snarkjs powersoftau new bls12-381 14 pot14_0000.ptau -v
-snarkjs powersoftau contribute pot14_0000.ptau pot14_0001.ptau --name="First contribution" -v -e="some random text"
-snarkjs powersoftau prepare phase2 pot14_0001.ptau pot14_final.ptau -v
-snarkjs groth16 setup Sudoku.r1cs pot14_final.ptau Sudoku_0000.zkey
-snarkjs zkey contribute Sudoku_0000.zkey Sudoku_final.zkey --name="1st Contributor Name" -v -e="some random text"
-snarkjs zkey export verificationkey Sudoku_final.zkey verification_key.json
-
-# Generating a Proof
-snarkjs groth16 prove Sudoku_final.zkey Sudoku.wtns proof.json public.json
-# Verifying a Proof
-snarkjs groth16 verify verification_key.json public.json proof.json
+# `npm run fixtures:build` installs/uses the pinned compiler, reads the tracked
+# private/public input JSON, and verifies the resulting proof before recording it.
 
 # export Tolk contract
 npx export-ton-verifier ./circuits/Sudoku/Sudoku_final.zkey ./contracts/verifier_sudoku.tolk

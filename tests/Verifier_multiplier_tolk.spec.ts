@@ -1,8 +1,8 @@
 import { Verifier } from '../wrappers/Verifier_tolk';
 import { GasLogAndSave } from './gas-logger';
 import {
-    buildMultiplierPayload,
     compressProof,
+    getAlternateMultiplierPayload,
     getMultiplierPayload,
     verifyMultiplierProof,
 } from './groth16-payloads';
@@ -54,15 +54,14 @@ describe(TEST_NAME, () => {
     it('should reject tampered proof', async () => {
         const deployed = await deployVerifier();
         const validPayload = await getMultiplierPayload();
-        const tamperedPayload = await buildMultiplierPayload({
-            a: '436',
-            b: '32',
-        });
+        const alternatePayload = await getAlternateMultiplierPayload();
 
-        expect(await verifyMultiplierProof(tamperedPayload.proof, validPayload.publicSignals)).toBe(false);
+        expect(await verifyMultiplierProof(alternatePayload.proof, validPayload.publicSignals)).toBe(false);
 
         const payloadWithTamperedProof = {
-            ...payloadToFuncOrTolkArgs(tamperedPayload),
+            ...payloadToFuncOrTolkArgs({
+                ...(await compressProof(alternatePayload.proof, validPayload.publicSignals)),
+            }),
             pubInputs: validPayload.pubInputs,
         };
         expect(await callFuncOrTolkGetter(deployed.verifier, payloadWithTamperedProof, VERIFY_GETTER)).toBe(false);

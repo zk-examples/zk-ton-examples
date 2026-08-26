@@ -1,0 +1,230 @@
+{
+  "schema": 1,
+  "snarkjs": "0.7.6",
+  "artifacts": [
+    {
+      "path": "package.json",
+      "sha256": "fdf64fcf63e3f6af6133e324cd995d966994742806fc11ab0e007d1bdbba4118"
+    },
+    {
+      "path": "package-lock.json",
+      "sha256": "aea4720901a7a0bca6ff92d86e083899e5f8b944540bffc70631d734cbd4347b"
+    },
+    {
+      "path": "scripts/compileMultiplier.ps1",
+      "sha256": "3569daaa9451677737a11f9d867f20ee5487098b0bf537d0b34cfd2c4bd798e5"
+    },
+    {
+      "path": "scripts/installNoname.ps1",
+      "sha256": "082b7a7b6c7050a88b727c9e7b289b016c349e598405d45bfefacbbd233adb69"
+    },
+    {
+      "path": "scripts/rebuildSnarkjsFixtures.ts",
+      "sha256": "4c9a3393e605a4a480464018ba4f636e5379ef2d22d66c7fb6bd82e96b2baea5"
+    },
+    {
+      "path": "scripts/rebuildNativeFixtures.ts",
+      "sha256": "54d5a4521d7d550b863921c9d56c005b823221118d203908ae038745d79a3c54"
+    },
+    {
+      "path": "scripts/fixtureManifest.ts",
+      "sha256": "bc3d84774b874c4604b126178f50fdee4ea56ce1cd51b5e34f4e03e30dbdf78f"
+    },
+    {
+      "path": "circuits/bls12-381-pot14-final.ptau",
+      "sha256": "ba16f610d3ad0f17fd8f282d3c95e9d451e6ed9b8ce30c2018f35c8ae99196c4"
+    },
+    {
+      "path": "circuits/Multiplier/Multiplier.circom",
+      "sha256": "b5593cb4ee3d75bcfbd47490680c1a1143843e3bd69490d9e4caaccc0182aef7"
+    },
+    {
+      "path": "circuits/Multiplier/Multiplier.r1cs",
+      "sha256": "2a96dd9ba2ae9bc01e9748a06733d2ba4ffa63295bcaa6654ed9f01931d764fc"
+    },
+    {
+      "path": "circuits/Multiplier/Multiplier.sym",
+      "sha256": "052e3ee4ca66c92265d846e2668ad64261d19e24f08abd6afc7507928441547d"
+    },
+    {
+      "path": "circuits/Multiplier/Multiplier_js/Multiplier.wasm",
+      "sha256": "091863c47764a6607d66938711ecadd8003508715a7878ab65ed962425cdcc2a"
+    },
+    {
+      "path": "circuits/Multiplier/Multiplier_final.zkey",
+      "sha256": "f5750b2e5c158b06b875eb834f619bf9d55c365af0498aba20e2dd368da15d9f"
+    },
+    {
+      "path": "circuits/Multiplier/verification_key.json",
+      "sha256": "4865e048a68c580bb973b496eb4bc20b6b0662a87279169b20ddde429c7d1b92"
+    },
+    {
+      "path": "circuits/Multiplier/input.json",
+      "sha256": "1bcfe46b72a1cf5ce93c8c745d6f3a8bdb35c2bc6695bb0a5bc3bbf2a6a97bbf"
+    },
+    {
+      "path": "circuits/Multiplier/input-alternate.json",
+      "sha256": "bdc81ae15dcfa0b52b8871372fea4399247b3704eaac2bc701a1c2640c35b538"
+    },
+    {
+      "path": "circuits/Multiplier/proof.json",
+      "sha256": "f753bb49286dcc5aba698657407da255d80338d9880143b97e8fe43564d9d44d"
+    },
+    {
+      "path": "circuits/Multiplier/public.json",
+      "sha256": "6d5ab7329326477c3fa4cc7271931d90ac7a95aab1c7d1b87bd6aef16fc92c5a"
+    },
+    {
+      "path": "circuits/Multiplier/proof-alternate.json",
+      "sha256": "e22b9c5544d79cd6c5affd4b3f6474f9c8985c34c4bb8bf3c3bd6c82c5ed61c4"
+    },
+    {
+      "path": "circuits/Multiplier/public-alternate.json",
+      "sha256": "ad2498fbe455a9e0202c029ec5416d7d5a90d2d5a1ab6efe4de9ffebc8803817"
+    },
+    {
+      "path": "circuits/Sudoku/Noname.toml",
+      "sha256": "b4f29315b3cd50f1498ce5f9b379028decb406808146fa0e2e6b2798ac5a3c90"
+    },
+    {
+      "path": "circuits/Sudoku/src/main.no",
+      "sha256": "017fcb62d341f7ea3903ab7e18ccc793929c95ffef2b469de5f7ffeaeef012ba"
+    },
+    {
+      "path": "circuits/Sudoku/Sudoku.r1cs",
+      "sha256": "b2015206301643ee70223fb1aa7ff311db8afb5c4d8c178778d542ee6740b2c8"
+    },
+    {
+      "path": "circuits/Sudoku/Sudoku_final.zkey",
+      "sha256": "9a7473fb42940d1825dae51296b65cc3c20019bed0f0ac1d716923257c9c255c"
+    },
+    {
+      "path": "circuits/Sudoku/verification_key.json",
+      "sha256": "89fad336b1d5cc5db553a69f27b8538c9eae644200ae95d22c802db0fa319471"
+    },
+    {
+      "path": "circuits/Sudoku/private-input.json",
+      "sha256": "168656ba6adde8d91f9d45d737c87a3ddad811918a91a5ddaa0142b4562e3eca"
+    },
+    {
+      "path": "circuits/Sudoku/public-input.json",
+      "sha256": "127cf862a84c40376514ae8654fdc74bc5152929dd1340fbdc7fb9bdd992e32d"
+    },
+    {
+      "path": "circuits/Sudoku/proof.json",
+      "sha256": "39a3cfe821802cf5ed9b3a1100bb267b899046f337c0570c963b396ce20db040"
+    },
+    {
+      "path": "circuits/Sudoku/public.json",
+      "sha256": "8457ae74a156821ad040bedd823491a66b1780498c489bf1f9c0a38f55107d76"
+    },
+    {
+      "path": "circuits/cubic-gnark/main.go",
+      "sha256": "afa87ecc10a3b63662120da4556a07e77cfc0c97640298e5ec5798682e3e7b71"
+    },
+    {
+      "path": "circuits/cubic-gnark/go.mod",
+      "sha256": "05d9ee5991931a769a32310a2ea40f1db8a0da320a0777fc066bd26f7963d0cb"
+    },
+    {
+      "path": "circuits/cubic-gnark/go.sum",
+      "sha256": "cef73434d204072fc6e9581442f67c60612820b82d976983b9e214961ac9d0e5"
+    },
+    {
+      "path": "circuits/cubic-gnark/artifacts/proof_gnark.json",
+      "sha256": "eb59c9cdd5844ea84a016579c193694d902288b0b0a906f5354f33f6f1385f8c"
+    },
+    {
+      "path": "circuits/cubic-gnark/artifacts/proof.bin",
+      "sha256": "4445c028a7edd0c1873ac9b79489482156da5bc7ccee90673d70028155d84ff2"
+    },
+    {
+      "path": "circuits/cubic-gnark/artifacts/proof.json",
+      "sha256": "309e55de1e90954f25efa623e96d0f6a1b428a53282e7fd7ddb7ac62426eff2d"
+    },
+    {
+      "path": "circuits/cubic-gnark/artifacts/public.json",
+      "sha256": "438357648dc77bb79ab9fbefdb4ca1eea8b725449f44b98113b5172c50119dc3"
+    },
+    {
+      "path": "circuits/cubic-gnark/artifacts/verification_key_gnark.json",
+      "sha256": "e17619aae3b099f1b6b07b09b042794403f4194980cf6b3babe5f71983a280db"
+    },
+    {
+      "path": "circuits/cubic-gnark/artifacts/verification_key.bin",
+      "sha256": "f3b422fc8b1ef97a29f5a812e8328c59e9111f0aecad8cf80b52ec2a8f762b39"
+    },
+    {
+      "path": "circuits/cubic-gnark/artifacts/verification_key.json",
+      "sha256": "1762602a8b9bb395acd767fce3a7d4b027f46fbad3060a17a83d3cd387c94859"
+    },
+    {
+      "path": "circuits/Arkworks/MulCircuit/Cargo.toml",
+      "sha256": "bb7c03a15f593f0ec11c46f7c0020665d86e2d71c27494fad6a133ca3609553e"
+    },
+    {
+      "path": "circuits/Arkworks/MulCircuit/Cargo.lock",
+      "sha256": "f28cce5ac6614b5093a462b12f0aad0e2e7dc41b689f72a143ba7ba3973c7666"
+    },
+    {
+      "path": "circuits/Arkworks/MulCircuit/rust-toolchain.toml",
+      "sha256": "e4c6d27e48d71df0ae66d84f3bc2d5df8cbf5c3cbb3225475a7852d94361a0c5"
+    },
+    {
+      "path": "circuits/Arkworks/MulCircuit/src/main.rs",
+      "sha256": "4851ee405600be1b4b1647d3d78339e28a23967c407803cf2eb944b67e162df4"
+    },
+    {
+      "path": "circuits/Arkworks/MulCircuit/json/groth16_artifacts.json",
+      "sha256": "957959a2e763ffd07e21c3cb2d28cde8407c5a7daacb31cdc80c4e631ea469af"
+    },
+    {
+      "path": "circuits/Arkworks/MulCircuit/json/proof.json",
+      "sha256": "0538bedc227a9a97b0e88deeec4cbb1b7b85ca1e88f89e25c3daa47e949cb88d"
+    },
+    {
+      "path": "circuits/Arkworks/MulCircuit/json/verification_key.json",
+      "sha256": "62e44a04ce2ebe63f8735aafa5e368033a7a22fcab143be9dc1c4939877974f7"
+    },
+    {
+      "path": "circuits/Arkworks/json/mimc/Bn254/verification_key.json",
+      "sha256": "0811eafc91be7808bc8263fc8cfaaff3afa7c593117be65ba83f35db83858739"
+    },
+    {
+      "path": "circuits/Arkworks/json/mimc/Bn254/proof.json",
+      "sha256": "e0dc26d2a7d49145bad43a097e41c466bb45a9c999744f70f1e81456d5e30465"
+    },
+    {
+      "path": "circuits/Arkworks/json/mimc/Bls12-381/verification_key.json",
+      "sha256": "f9bffd4ebf5ad16b47933730fb59e6c191fa0741e212569774dc2169e671a6fd"
+    },
+    {
+      "path": "circuits/Arkworks/json/mimc/Bls12-381/proof.json",
+      "sha256": "b97958e4d4b9d718a2238bbee1000e0c1f009eff1e423c45ad0037ed33c012de"
+    },
+    {
+      "path": "circuits/Arkworks/json/mul/Bn254/verification_key.json",
+      "sha256": "478d22885b4bc421a9581175a68c4aee8ac3abb1a31c56aa320e9751a96192c3"
+    },
+    {
+      "path": "circuits/Arkworks/json/mul/Bn254/proof.json",
+      "sha256": "62f45f380ab83936b6edf2ec8684ef19629ed05a1375093cfdbf48684fecab66"
+    },
+    {
+      "path": "circuits/Arkworks/json/mul/Bls12-381/verification_key.json",
+      "sha256": "62e44a04ce2ebe63f8735aafa5e368033a7a22fcab143be9dc1c4939877974f7"
+    },
+    {
+      "path": "circuits/Arkworks/json/mul/Bls12-381/proof.json",
+      "sha256": "0538bedc227a9a97b0e88deeec4cbb1b7b85ca1e88f89e25c3daa47e949cb88d"
+    },
+    {
+      "path": "circuits/Arkworks/json/mulbn254/verification_key.json",
+      "sha256": "478d22885b4bc421a9581175a68c4aee8ac3abb1a31c56aa320e9751a96192c3"
+    },
+    {
+      "path": "circuits/Arkworks/json/mulbn254/proof.json",
+      "sha256": "62f45f380ab83936b6edf2ec8684ef19629ed05a1375093cfdbf48684fecab66"
+    }
+  ]
+}

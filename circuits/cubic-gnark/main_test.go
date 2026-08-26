@@ -44,3 +44,10 @@ func TestMainWritesAllOutputsToArtifacts(t *testing.T) {
 		}
 	}
 }
+
+func TestGenerateArtifactsRejectsUnsatisfiedAssignment(t *testing.T) {
+	err := generateArtifacts(t.TempDir(), CubicCircuit{X: 3, Y: 36})
+	if err == nil {
+		t.Fatal("expected an unsatisfied cubic assignment to be rejected")
+	}
+}

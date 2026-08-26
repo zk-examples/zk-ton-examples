@@ -1,19 +1,32 @@
 {
     "name": "zk-ton-example",
     "version": "0.0.1",
+    "packageManager": "npm@11.13.0",
+    "engines": {
+        "node": "24.16.0"
+    },
     "license": "MIT",
     "scripts": {
         "bp": "blueprint",
         "start": "blueprint run",
         "build": "blueprint build",
-        "test": "jest --verbose",
+        "circuits:build": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/compileMultiplier.ps1",
+        "circuits:check": "node scripts/checkMultiplierArtifact.js",
+        "noname:install": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/installNoname.ps1",
+        "fixtures:snarkjs:build": "npm run circuits:build && ts-node scripts/rebuildSnarkjsFixtures.ts --all",
+        "fixtures:native:build": "ts-node scripts/rebuildNativeFixtures.ts",
+        "fixtures:record": "ts-node scripts/fixtureManifest.ts --record",
+        "fixtures:verify": "ts-node scripts/fixtureManifest.ts --verify",
+        "fixtures:build": "npm run fixtures:snarkjs:build && npm run fixtures:native:build && npm run fixtures:record",
+        "pretest": "npm run circuits:check && npm run fixtures:verify",
+        "test": "jest --verbose --runInBand",
         "generate:verifiers": "ts-node scripts/regenerate-verifiers.ts"
     },
     "dependencies": {
         "@ton/convert-func-to-tolk": "^1.0.0",
         "@ton/core": "~0",
         "@types/snarkjs": "^0.7.9",
-        "export-ton-verifier": "^3.0.1",
+        "export-ton-verifier": "^3.0.3",
         "snarkjs": "^0.7.6"
     },
     "devDependencies": {

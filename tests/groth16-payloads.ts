@@ -1,12 +1,5 @@
 import * as snarkjs from 'snarkjs';
-import * as path from 'node:path';
-
 import { getExportTonVerifier } from './export-ton-verifier';
-
-const multiplierWasmPath = path.join(__dirname, '../circuits/Multiplier/Multiplier_js', 'Multiplier.wasm');
-const multiplierZkeyPath = path.join(__dirname, '../circuits/Multiplier', 'Multiplier_final.zkey');
-const sudokuWtnsPath = path.join(__dirname, '../circuits/Sudoku', 'Sudoku.wtns');
-const sudokuZkeyPath = path.join(__dirname, '../circuits/Sudoku', 'Sudoku_final.zkey');
 
 export type Groth16Payload = {
     pi_a: Buffer;
@@ -22,17 +15,8 @@ export type Groth16ProofPayload = Groth16Payload & {
     publicSignals: snarkjs.PublicSignals;
 };
 
-export type MultiplierInput = {
-    a: string;
-    b: string;
-};
-
-export const DEFAULT_MULTIPLIER_INPUT: MultiplierInput = {
-    a: '435',
-    b: '32',
-};
-
 let multiplierPayload: Promise<Groth16ProofPayload> | undefined;
+let alternateMultiplierPayload: Promise<Groth16ProofPayload> | undefined;
 let sudokuPayload: Promise<Groth16ProofPayload> | undefined;
 let cubicPayload: Promise<Groth16ProofPayload> | undefined;
 let arkworksPayload: Promise<Groth16ProofPayload> | undefined;
@@ -67,15 +51,26 @@ async function buildPayload(
     };
 }
 
-export async function buildMultiplierPayload(input: MultiplierInput = DEFAULT_MULTIPLIER_INPUT) {
+async function buildMultiplierPayload() {
     const verificationKey = require('../circuits/Multiplier/verification_key.json');
-    const { proof, publicSignals } = await snarkjs.groth16.fullProve(input, multiplierWasmPath, multiplierZkeyPath);
-    return buildPayload(verificationKey, proof as ProofFile, publicSignals);
+    const proof = require('../circuits/Multiplier/proof.json') as ProofFile;
+    const publicSignals = require('../circuits/Multiplier/public.json') as snarkjs.PublicSignals;
+    return buildPayload(verificationKey, proof, publicSignals);
 }
 
 export function getMultiplierPayload() {
     multiplierPayload ??= buildMultiplierPayload();
     return multiplierPayload;
+}
+
+export function getAlternateMultiplierPayload() {
+    alternateMultiplierPayload ??= (async () => {
+        const verificationKey = require('../circuits/Multiplier/verification_key.json');
+        const proof = require('../circuits/Multiplier/proof-alternate.json') as ProofFile;
+        const publicSignals = require('../circuits/Multiplier/public-alternate.json') as snarkjs.PublicSignals;
+        return buildPayload(verificationKey, proof, publicSignals);
+    })();
+    return alternateMultiplierPayload;
 }
 
 export async function verifyMultiplierProof(proofFile: ProofFile, publicSignals: snarkjs.PublicSignals) {
@@ -86,8 +81,9 @@ export async function verifyMultiplierProof(proofFile: ProofFile, publicSignals:
 export function getSudokuPayload() {
     sudokuPayload ??= (async () => {
         const verificationKey = require('../circuits/Sudoku/verification_key.json');
-        const { proof, publicSignals } = await snarkjs.groth16.prove(sudokuZkeyPath, sudokuWtnsPath);
-        return buildPayload(verificationKey, proof as ProofFile, publicSignals);
+        const proof = require('../circuits/Sudoku/proof.json') as ProofFile;
+        const publicSignals = require('../circuits/Sudoku/public.json') as snarkjs.PublicSignals;
+        return buildPayload(verificationKey, proof, publicSignals);
     })();
     return sudokuPayload;
 }
